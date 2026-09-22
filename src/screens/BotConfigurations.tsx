@@ -39,11 +39,15 @@ const DS = {
   textMuted: '#64748b',
   textFaint: '#94a3b8',
   accent: '#2563eb',
-  accentSoft: 'rgba(37,99,235,0.07)',
+  accentDark: '#1d4ed8',
+  accentTwo: '#4f46e5',
+  accentSoft: 'rgba(37,99,235,0.08)',
   accentBorder: 'rgba(37,99,235,0.18)',
-  accentHover: 'rgba(37,99,235,0.11)',
+  accentHover: 'rgba(37,99,235,0.12)',
   green: '#16a34a', greenSoft: '#f0fdf4', greenBorder: '#bbf7d0',
   red: '#dc2626', redSoft: '#fef2f2', redBorder: '#fecaca',
+  shadow: 'none',
+  radius: 10,
 }
 
 type WStep = 0 | 1 | 2 | 3 | 4
@@ -177,7 +181,7 @@ export default function BotConfigurations({ botConfigs, activeBotConfigId, onSet
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: DS.text }}>Bot Configurations</h1>
           <p style={{ margin: '4px 0 0', fontSize: 12, color: DS.textSub }}>{botConfigs.length} configuration{botConfigs.length !== 1 ? 's' : ''} · Controls AI Chat behaviour</p>
         </div>
-        <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: DS.accent, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(37,99,235,0.28)', transition: 'all 0.15s' }}
+        <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: DS.accent, border: `1px solid ${DS.accent}`, borderRadius: DS.radius, color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s' }}
           onMouseEnter={e => e.currentTarget.style.background = '#1d4ed8'}
           onMouseLeave={e => e.currentTarget.style.background = DS.accent}
         >
@@ -193,7 +197,7 @@ export default function BotConfigurations({ botConfigs, activeBotConfigId, onSet
           </div>
           <div style={{ fontSize: 17, fontWeight: 700, color: DS.text, marginBottom: 6 }}>No configurations yet</div>
           <div style={{ fontSize: 13, color: DS.textSub, marginBottom: 24, textAlign: 'center', maxWidth: 340 }}>Create your first bot configuration to personalise FinBot for specific sectors and time periods.</div>
-          <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: DS.accent, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: DS.accent, border: '1px solid rgba(37,99,235,0.12)', borderRadius: DS.radius, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             <HiOutlinePlus size={14} /> Create First Config
           </button>
         </div>
@@ -210,7 +214,7 @@ export default function BotConfigurations({ botConfigs, activeBotConfigId, onSet
               ? `Annual · ${cfg.years.slice(0, 3).join(', ')}${cfg.years.length > 3 ? '…' : ''}`
               : `Quarterly · ${cfg.years[0] ?? ''} · ${cfg.quarters.join(', ')}`
             return (
-              <div key={cfg.id} style={{ background: DS.surface, border: `1.5px solid ${isActive ? DS.accentBorder : DS.border}`, borderRadius: 12, padding: '14px 16px', boxShadow: isActive ? '0 0 0 3px rgba(37,99,235,0.06)' : '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)', transition: 'all 0.2s' }}>
+              <div key={cfg.id} style={{ background: DS.surface, border: `1px solid ${isActive ? DS.accentBorder : DS.border}`, borderRadius: 12, padding: '14px 16px', boxShadow: isActive ? '0 0 0 3px rgba(37,99,235,0.06)' : '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)', transition: 'all 0.2s' }}>
 
                 {/* Header row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10 }}>
@@ -359,11 +363,11 @@ export default function BotConfigurations({ botConfigs, activeBotConfigId, onSet
                       const sel = form.sectors.includes(sec)
                       return (
                         <button key={sec} onClick={() => toggleSector(sec)}
-                          style={{ textAlign: 'left', padding: '7px 10px', borderRadius: 8, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontSize: 11, fontWeight: sel ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 6 }}
+                          style={{ textAlign: 'left', padding: '7px 10px', borderRadius: 8, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontSize: 11, fontWeight: sel ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 6 }}
                           onMouseEnter={e => { if (!sel) { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.background = DS.surfaceHover } }}
                           onMouseLeave={e => { if (!sel) { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.background = DS.surface } }}
                         >
-                          <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, border: `1.5px solid ${sel ? DS.accent : DS.borderMed}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.12s' }}>
+                          <div style={{ width: 16, height: 16, borderRadius: 4, flexShrink: 0, border: `1px solid ${sel ? DS.accent : DS.borderMed}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.12s' }}>
                             {sel && <HiOutlineCheck size={9} color="#fff" />}
                           </div>
                           <span style={{ fontSize: 11, lineHeight: 1.3 }}>{sec}</span>
@@ -409,11 +413,11 @@ export default function BotConfigurations({ botConfigs, activeBotConfigId, onSet
                             const sel = form.companies.includes(co)
                             return (
                               <button key={co} onClick={() => toggleCompany(co)}
-                                style={{ textAlign: 'left', padding: '9px 12px', borderRadius: 8, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontSize: 12, fontWeight: sel ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 8 }}
+                                style={{ textAlign: 'left', padding: '9px 12px', borderRadius: 8, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontSize: 12, fontWeight: sel ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 8 }}
                                 onMouseEnter={e => { if (!sel) { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.background = DS.surfaceHover } }}
                                 onMouseLeave={e => { if (!sel) { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.background = DS.surface } }}
                               >
-                                <div style={{ width: 15, height: 15, borderRadius: 4, flexShrink: 0, border: `1.5px solid ${sel ? DS.accent : DS.borderMed}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.12s' }}>
+                                <div style={{ width: 15, height: 15, borderRadius: 4, flexShrink: 0, border: `1px solid ${sel ? DS.accent : DS.borderMed}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.12s' }}>
                                   {sel && <HiOutlineCheck size={9} color="#fff" />}
                                 </div>
                                 {co}
@@ -576,7 +580,7 @@ export default function BotConfigurations({ botConfigs, activeBotConfigId, onSet
                                   const sel = form.metrics.includes(m)
                                   return (
                                     <button key={m} onClick={() => toggleMetric(m)}
-                                      style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontWeight: sel ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 4 }}
+                                      style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontWeight: sel ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 4 }}
                                       onMouseEnter={e => { if (!sel) e.currentTarget.style.borderColor = DS.accentBorder }}
                                       onMouseLeave={e => { if (!sel) e.currentTarget.style.borderColor = DS.border }}
                                     >
@@ -599,7 +603,7 @@ export default function BotConfigurations({ botConfigs, activeBotConfigId, onSet
                         const sel = form.metrics.includes(m)
                         return (
                           <button key={m} onClick={() => toggleMetric(m)}
-                            style={{ padding: '8px 14px', borderRadius: 6, fontSize: 12, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontWeight: sel ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 5 }}
+                            style={{ padding: '8px 14px', borderRadius: 6, fontSize: 12, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontWeight: sel ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s', display: 'flex', alignItems: 'center', gap: 5 }}
                             onMouseEnter={e => { if (!sel) e.currentTarget.style.borderColor = DS.accentBorder }}
                             onMouseLeave={e => { if (!sel) e.currentTarget.style.borderColor = DS.border }}
                           >
@@ -658,7 +662,7 @@ export default function BotConfigurations({ botConfigs, activeBotConfigId, onSet
                     <label style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', textTransform: 'uppercase', display: 'block', marginBottom: 7 }}>RESPONSE STYLE</label>
                     <div style={{ display: 'flex', gap: 8 }}>
                       {(['concise', 'detailed', 'analytical'] as const).map(st => (
-                        <button key={st} onClick={() => setForm(f => ({ ...f, responseStyle: st }))} style={{ flex: 1, padding: '9px', borderRadius: 8, border: `1.5px solid ${form.responseStyle === st ? DS.accentBorder : DS.border}`, background: form.responseStyle === st ? DS.accentSoft : 'transparent', color: form.responseStyle === st ? DS.accent : DS.textSub, fontSize: 12, fontWeight: form.responseStyle === st ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s' }}>
+                        <button key={st} onClick={() => setForm(f => ({ ...f, responseStyle: st }))} style={{ flex: 1, padding: '9px', borderRadius: 8, border: `1px solid ${form.responseStyle === st ? DS.accentBorder : DS.border}`, background: form.responseStyle === st ? DS.accentSoft : 'transparent', color: form.responseStyle === st ? DS.accent : DS.textSub, fontSize: 12, fontWeight: form.responseStyle === st ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s' }}>
                           {styleMap[st]}
                         </button>
                       ))}
@@ -696,7 +700,7 @@ export default function BotConfigurations({ botConfigs, activeBotConfigId, onSet
                     : `Continue with ${form.metrics.length} metric${form.metrics.length === 1 ? '' : 's'}`} →
                 </button>
               ) : (
-                <button onClick={save} style={{ flex: 1, padding: '11px', border: 'none', borderRadius: 8, background: DS.accent, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(37,99,235,0.3)' }}>
+                <button onClick={save} style={{ flex: 1, padding: '10px', border: `1px solid ${DS.accent}`, borderRadius: DS.radius, background: DS.accent, color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
                   {modal === 'create' ? `Create "${form.name}"` : 'Save Changes'}
                 </button>
               )}

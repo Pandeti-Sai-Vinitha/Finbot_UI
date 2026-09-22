@@ -15,12 +15,14 @@ type AuthMode = 'login' | 'register' | 'forgot' | 'forgot-sent'
 type UserRole = 'admin' | 'analyst'
 
 const C = {
-  accent: '#2563eb', accentDark: '#1d4ed8',
-  accentSoft: 'rgba(37,99,235,0.07)', accentBorder: 'rgba(37,99,235,0.2)',
-  text: '#0f172a', textSub: '#64748b', textFaint: '#94a3b8',
-  card: '#fff', border: 'rgba(37,99,235,0.1)',
+  accent: '#2563eb', accentDark: '#1d4ed8', accentTwo: '#4f46e5',
+  accentSoft: 'rgba(37,99,235,0.08)', accentBorder: 'rgba(37,99,235,0.18)',
+  text: '#0f172a', textSub: '#475569', textMuted: '#64748b', textFaint: '#94a3b8',
+  card: '#fff', border: 'rgba(15,23,42,0.08)',
   red: '#dc2626', redSoft: '#fef2f2', redBorder: '#fecaca',
   green: '#16a34a', greenSoft: '#f0fdf4', greenBorder: '#bbf7d0',
+  shadow: 'none',
+  radius: 10,
 }
 
 const registered = new Map<string, { name: string; password: string }>()
@@ -45,12 +47,11 @@ function DashPreview() {
       background: '#fff',
       border: '1px solid rgba(37,99,235,0.12)',
       borderRadius: 14, overflow: 'hidden', width: 290,
-      boxShadow: '0 14px 44px rgba(37,99,235,0.12)',
       transform: 'perspective(900px) rotateY(-10deg) rotateX(3deg)',
       transformOrigin: 'center center',
     }}>
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #2563eb, #4f46e5)', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ background: C.accent, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
         <RiSparklingLine size={14} color="rgba(255,255,255,0.8)" />
         <span style={{ fontSize: 11, fontWeight: 600, color: '#fff', fontFamily: 'Instrument Sans, sans-serif' }}>FinBot — Sector Overview</span>
         <span style={{ marginLeft: 'auto', fontSize: 9, color: 'rgba(255,255,255,0.6)', fontFamily: 'DM Mono, monospace' }}>22 SECTORS</span>
@@ -94,7 +95,6 @@ function FloatCard({ icon, title, chips, delay, top, right, left, bottom }:
       position: 'absolute', top, right, left, bottom,
       background: '#fff', border: '1px solid rgba(37,99,235,0.12)',
       borderRadius: 10, padding: '9px 11px', width: 154,
-      boxShadow: '0 4px 18px rgba(37,99,235,0.09)',
       animation: `floatCard 4s ease-in-out ${delay} infinite`,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
@@ -113,10 +113,10 @@ function FloatCard({ icon, title, chips, delay, top, right, left, bottom }:
 /* ─── Stat pill ──────────────────────────────────────────────────── */
 function StatPill({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', background: '#fff', border: '1px solid rgba(37,99,235,0.12)', borderRadius: 40, boxShadow: '0 1px 6px rgba(37,99,235,0.06)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', marginRight: 14 }}>
       <span style={{ color: C.accent }}>{icon}</span>
-      <span style={{ fontSize: 12, fontWeight: 700, color: C.text, fontFamily: 'Instrument Sans, sans-serif' }}>{value}</span>
-      <span style={{ fontSize: 10, color: C.textSub }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: C.text, fontFamily: 'Instrument Sans, sans-serif' }}>{value}</span>
+      <span style={{ fontSize: 12, color: C.textSub }}>{label}</span>
     </div>
   )
 }
@@ -137,6 +137,9 @@ export default function Landing({ onLogin }: Props) {
         @keyframes floatPreview { 0%,100%{transform:perspective(900px) rotateY(-10deg) rotateX(3deg) translateY(0px)} 50%{transform:perspective(900px) rotateY(-10deg) rotateX(3deg) translateY(-8px)} }
         @keyframes pulse2 { 0%,100%{opacity:0.25} 50%{opacity:0.55} }
         @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+        @media (max-width: 900px) {
+          .landing-hero { flex-direction: column !important; align-items: center !important; justify-content: flex-start !important; overflow: auto !important; height: auto !important; min-height: calc(100vh - 53px) !important; padding: 24px 20px 72px !important; }
+        }
       `}</style>
 
       {/* Dot grid */}
@@ -149,50 +152,48 @@ export default function Landing({ onLogin }: Props) {
       </div>
 
       {/* Nav */}
-      <nav style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 40px', background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(37,99,235,0.08)' }}>
+      <nav style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 40px', background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #2563eb, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 10px rgba(37,99,235,0.3)' }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <RiSparklingLine size={14} color="#fff" />
           </div>
           <span style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: 'Instrument Sans, sans-serif', letterSpacing: '-0.02em' }}>FinBot</span>
-          <span style={{ fontSize: 8, color: C.accent, border: `1px solid ${C.accentBorder}`, borderRadius: 4, padding: '1px 5px', fontFamily: 'DM Mono, monospace' }}>BETA</span>
+          <span style={{ fontSize: 9, color: C.textFaint, letterSpacing: '0.08em', fontWeight: 600 }}>BETA</span>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <button onClick={() => setMode('login')}
-            style={{ padding: '6px 18px', background: 'transparent', border: `1px solid ${C.accentBorder}`, borderRadius: 7, color: C.accent, fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.accentSoft }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            style={{ padding: '7px 14px', background: 'transparent', border: 'none', borderRadius: 8, color: C.textSub, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+            onMouseEnter={e => { e.currentTarget.style.color = C.text }}
+            onMouseLeave={e => { e.currentTarget.style.color = C.textSub }}
           >Sign In</button>
-          <button onClick={() => setMode('login')}
-            style={{ padding: '6px 18px', background: 'linear-gradient(135deg, #2563eb, #4f46e5)', border: 'none', borderRadius: 7, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', boxShadow: '0 3px 10px rgba(37,99,235,0.28)', transition: 'all 0.15s' }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-          >Get Started →</button>
+          <button onClick={() => setMode('register')}
+            style={{ padding: '7px 14px', background: C.accent, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+            onMouseEnter={e => { e.currentTarget.style.background = C.accentDark }}
+            onMouseLeave={e => { e.currentTarget.style.background = C.accent }}
+          >Get Started</button>
         </div>
       </nav>
 
       {/* Hero */}
-      <div style={{ position: 'relative', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '28px 40px 0', height: 'calc(100vh - 57px)', maxWidth: 1160, margin: '0 auto', gap: 32 }}>
+      <div className="landing-hero" style={{ position: 'relative', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '28px 40px 56px', height: 'calc(100vh - 53px)', maxWidth: 1160, margin: '0 auto', gap: 32, boxSizing: 'border-box' }}>
 
         {/* Left copy */}
-        <div style={{ maxWidth: 440, flexShrink: 0 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: C.accentSoft, border: `1px solid ${C.accentBorder}`, borderRadius: 20, marginBottom: 16 }}>
-            <HiOutlineArrowTrendingUp size={11} color={C.accent} />
-            <span style={{ fontSize: 9, color: C.accent, fontWeight: 600, fontFamily: 'DM Mono, monospace', letterSpacing: '0.04em' }}>AI-POWERED · NSE/BSE · INDIAN EQUITIES</span>
+        <div style={{ maxWidth: 460, flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 18, color: C.accent, fontSize: 11, fontWeight: 500, letterSpacing: '0.04em' }}>
+            <HiOutlineArrowTrendingUp size={13} />
+            AI-powered · NSE / BSE
           </div>
 
-          <h1 style={{ margin: '0 0 12px', fontSize: 36, fontWeight: 800, color: C.text, fontFamily: 'Instrument Sans, sans-serif', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
-            Financial Analysis<br />
-            <span style={{ background: 'linear-gradient(90deg, #2563eb, #4f46e5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-              for Indian Markets
-            </span>
+          <h1 style={{ margin: '0 0 14px', fontSize: 38, fontWeight: 700, color: C.text, fontFamily: 'Instrument Sans, sans-serif', letterSpacing: '-0.03em', lineHeight: 1.12 }}>
+            Financial analysis<br />
+            <span style={{ color: C.accent }}>for Indian markets</span>
           </h1>
 
-          <p style={{ margin: '0 0 22px', fontSize: 13, color: C.textSub, lineHeight: 1.6, maxWidth: 380 }}>
-            Explore 22 sectors, 40+ financial metrics, and 5 years of annual &amp; quarterly data — powered by AI insights across NSE and BSE.
+          <p style={{ margin: '0 0 24px', fontSize: 14, color: C.textSub, lineHeight: 1.65, maxWidth: 400 }}>
+            Explore 22 sectors, 40+ financial metrics, and 5 years of annual &amp; quarterly data — with AI insights across NSE and BSE.
           </p>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 0 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             <StatPill icon={<HiOutlineBuildingOffice2 size={12} />} value="5,000+" label="Companies" />
             <StatPill icon={<HiOutlineChartBar size={12} />} value="22" label="Sectors" />
             <StatPill icon={<HiOutlineCpuChip size={12} />} value="40+" label="Metrics" />
@@ -252,57 +253,33 @@ export default function Landing({ onLogin }: Props) {
         </div>
       </div>
 
-      {/* Auth modal */}
+      {/* Auth Modal */}
       {mode && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(6px)' }}
-          onClick={() => setMode(null)}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            className="fade-in"
-            style={{
-              background: '#ffffff',
-              borderRadius: 14,
-              width: 340,
-              boxShadow: '0 18px 44px rgba(15,23,42,0.1), 0 5px 16px rgba(37,99,235,0.06)',
-              border: '1px solid rgba(15,23,42,0.09)',
-              overflow: 'hidden',
-            }}
-          >
-            {mode === 'login'       && <LoginForm role={role} onRoleChange={setRole} onLogin={onLogin} onRegister={() => setMode('register')} onForgot={() => setMode('forgot')} onClose={() => setMode(null)} />}
-            {mode === 'register'    && <RegisterForm role={role} onRoleChange={setRole} onLogin={onLogin} onSignIn={() => setMode('login')} onClose={() => setMode(null)} />}
-            {mode === 'forgot'      && <ForgotForm onSent={() => setMode('forgot-sent')} onBack={() => setMode('login')} onClose={() => setMode(null)} />}
-            {mode === 'forgot-sent' && <ForgotSent onBack={() => setMode('login')} onClose={() => setMode(null)} />}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(4px)' }} onClick={() => setMode(null)} />
+          <div style={{ position: 'relative', width: '100%', maxWidth: 360, background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: 'none', overflow: 'hidden' }}>
+            <button onClick={() => setMode(null)} style={{ position: 'absolute', top: 16, right: 16, width: 28, height: 28, borderRadius: '50%', background: '#f1f5f9', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', cursor: 'pointer', zIndex: 10 }}>
+              <HiOutlineXMark size={16} />
+            </button>
+            {mode === 'login' && <LoginForm role={role} onRoleChange={setRole} onLogin={onLogin} onRegister={() => setMode('register')} onForgot={() => setMode('forgot')} />}
+            {mode === 'register' && <RegisterForm role={role} onRoleChange={setRole} onLogin={onLogin} onSignIn={() => setMode('login')} />}
+            {mode === 'forgot' && <ForgotForm onSent={() => setMode('forgot-sent')} onBack={() => setMode('login')} />}
+            {mode === 'forgot-sent' && <ForgotSent onBack={() => setMode('login')} />}
           </div>
         </div>
       )}
+
     </div>
   )
 }
 
 /* ─── Auth shared ────────────────────────────────────────────────── */
 
-function ModalHeader({ title, sub, onClose }: { title: string; sub: string; onClose: () => void }) {
+function ModalHeader({ title, sub }: { title: string; sub: string }) {
   return (
-    <div style={{ padding: '14px 14px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <div style={{ width: 26, height: 26, borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 5px 12px rgba(37,99,235,0.12)' }}>
-          <RiSparklingLine size={12} color="#fff" />
-        </div>
-        <div>
-          <div style={{ fontSize: 15.5, fontWeight: 700, color: C.text, fontFamily: 'Instrument Sans, sans-serif', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{title}</div>
-          <div style={{ fontSize: 10.8, color: C.textSub, marginTop: 3, lineHeight: 1.4 }}>{sub}</div>
-        </div>
-      </div>
-      <button
-        onClick={onClose}
-        style={{ width: 26, height: 26, borderRadius: 7, background: '#f8fafc', border: '1px solid rgba(15,23,42,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.textFaint, flexShrink: 0 }}
-        onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = C.text }}
-        onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = C.textFaint }}
-      >
-        <HiOutlineXMark size={15} />
-      </button>
+    <div style={{ padding: '22px 22px 0' }}>
+      <div style={{ fontSize: 18, fontWeight: 600, color: C.text, fontFamily: 'Instrument Sans, sans-serif', letterSpacing: '-0.02em', lineHeight: 1.25 }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: C.textSub, marginTop: 5, lineHeight: 1.45 }}>{sub}</div>
     </div>
   )
 }
@@ -318,15 +295,15 @@ function Field({ label, type, value, onChange, placeholder, icon, error }: {
   const shadow = focused && !error ? '0 0 0 3px rgba(37,99,235,0.08)' : 'none'
   return (
     <div>
-      <label style={{ fontSize: 8.6, fontWeight: 600, color: error ? C.red : C.textFaint, fontFamily: 'DM Mono, monospace', letterSpacing: '0.07em', display: 'block', marginBottom: 5 }}>{label}</label>
+      <label style={{ fontSize: 11, fontWeight: 500, color: error ? C.red : C.textSub, display: 'block', marginBottom: 6 }}>{label.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase())}</label>
       <div style={{ position: 'relative' }}>
-        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: error ? C.red : focused ? C.accent : C.textFaint, display: 'flex', transition: 'color 0.15s' }}>{icon}</span>
+        <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: error ? C.red : focused ? C.accent : C.textFaint, display: 'flex', transition: 'color 0.15s' }}>{icon}</span>
         <input
           type={isPass && show ? 'text' : type}
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          style={{ width: '100%', padding: '9px 32px', border: `1.5px solid ${borderColor}`, borderRadius: 8, fontSize: 12.5, color: C.text, background: error ? '#fef2f2' : '#f8fafc', outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', boxShadow: shadow, transition: 'border-color 0.15s, box-shadow 0.15s', height: 36 }}
+          style={{ width: '100%', padding: '7px 28px', border: `1px solid ${borderColor}`, borderRadius: 8, fontSize: 12, color: C.text, background: error ? C.redSoft : '#fff', outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', boxShadow: 'none', transition: 'border-color 0.15s, box-shadow 0.15s', height: 34 }}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
         />
@@ -348,9 +325,9 @@ function PrimaryBtn({ label, onClick, loading }: { label: string; onClick: () =>
     <button
       onClick={onClick}
       disabled={loading}
-      style={{ width: '100%', padding: '10px 14px', background: loading ? '#93c5fd' : 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12.5, fontWeight: 600, letterSpacing: '-0.01em', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: loading ? 'none' : '0 7px 16px rgba(37,99,235,0.14)', transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 40 }}
-      onMouseEnter={e => { if (!loading) { e.currentTarget.style.boxShadow = '0 10px 22px rgba(37,99,235,0.22)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 8px 18px rgba(37,99,235,0.18)'; e.currentTarget.style.transform = 'none' }}
+      style={{ width: '100%', padding: '6px 12px', background: loading ? '#93c5fd' : 'rgba(37,99,235,0.08)', color: C.accent, border: `1px solid rgba(37,99,235,0.18)`, borderRadius: 8, fontSize: 12, fontWeight: 600, letterSpacing: '-0.01em', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 34, boxShadow: 'none' }}
+      onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = 'rgba(37,99,235,0.12)' } }}
+      onMouseLeave={e => { if (!loading) { e.currentTarget.style.background = 'rgba(37,99,235,0.08)' } }}
     >
       {loading ? (
         <span style={{ display: 'flex', gap: 4 }}>
@@ -371,7 +348,7 @@ function PasswordStrength({ pass }: { pass: string }) {
   return (
     <div>
       <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
-        {[0,1,2,3].map(i => <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i < score ? colors[score] : '#e2e8f0', transition: 'background 0.3s' }} />)}
+        {[0, 1, 2, 3].map(i => <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i < score ? colors[score] : '#e2e8f0', transition: 'background 0.3s' }} />)}
       </div>
       <div style={{ fontSize: 10, color: colors[score], fontFamily: 'DM Mono, monospace' }}>{labels[score]}</div>
     </div>
@@ -380,18 +357,18 @@ function PasswordStrength({ pass }: { pass: string }) {
 
 /* ─── Role tabs shared component ────────────────────────────────── */
 function RoleTabs({ role, onChange }: { role: UserRole; onChange: (r: UserRole) => void }) {
-  const tabs: { id: UserRole; label: string; IconC: React.ElementType; iconColor: string; accent: string }[] = [
-    { id: 'admin',   label: 'Admin',   IconC: HiOutlineShieldCheck,           iconColor: '#2563eb', accent: '#2563eb' },
-    { id: 'analyst', label: 'Analyst', IconC: HiOutlinePresentationChartLine, iconColor: '#7c3aed', accent: '#7c3aed' },
+  const tabs: { id: UserRole; label: string; IconC: React.ElementType }[] = [
+    { id: 'admin', label: 'Admin', IconC: HiOutlineShieldCheck },
+    { id: 'analyst', label: 'Analyst', IconC: HiOutlinePresentationChartLine },
   ]
   return (
-    <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 8, padding: 3, margin: '12px 14px 0', gap: 3 }}>
+    <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, margin: '16px 22px 0' }}>
       {tabs.map(t => {
         const active = role === t.id
         return (
           <button key={t.id} onClick={() => onChange(t.id)}
-            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 10px', borderRadius: 7, border: 'none', background: active ? '#fff' : 'transparent', color: active ? t.accent : C.textSub, fontSize: 12, fontWeight: active ? 600 : 500, boxShadow: active ? '0 1px 3px rgba(15,23,42,0.05)' : 'none', transition: 'all 0.16s', fontFamily: 'Instrument Sans, sans-serif' }}>
-            <t.IconC size={13} color={active ? t.iconColor : C.textFaint} />
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '10px 8px', border: 'none', borderBottom: active ? `2px solid ${C.accent}` : '2px solid transparent', background: 'transparent', color: active ? C.accent : C.textSub, fontSize: 12, fontWeight: active ? 600 : 500, marginBottom: -1, transition: 'color 0.15s', fontFamily: 'Instrument Sans, sans-serif' }}>
+            <t.IconC size={13} color={active ? C.accent : C.textFaint} />
             {t.label}
           </button>
         )
@@ -400,7 +377,7 @@ function RoleTabs({ role, onChange }: { role: UserRole; onChange: (r: UserRole) 
   )
 }
 
-function LoginForm({ role, onRoleChange, onLogin, onRegister, onForgot, onClose }: { role: UserRole; onRoleChange: (r: UserRole) => void; onLogin: (u: User) => void; onRegister: () => void; onForgot: () => void; onClose: () => void }) {
+function LoginForm({ role, onRoleChange, onLogin, onRegister, onForgot }: { role: UserRole; onRoleChange: (r: UserRole) => void; onLogin: (u: User) => void; onRegister: () => void; onForgot: () => void }) {
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
   const [error, setError] = useState('')
@@ -420,24 +397,24 @@ function LoginForm({ role, onRoleChange, onLogin, onRegister, onForgot, onClose 
   }
   return (
     <div>
-      <ModalHeader title="Sign in to FinBot" sub="Choose your role and enter your credentials" onClose={onClose} />
+      <ModalHeader title="Sign in" sub="Enter your credentials to continue" />
       <RoleTabs role={role} onChange={r => { onRoleChange(r); setError('') }} />
-      <div style={{ padding: '12px 14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <Field label="EMAIL ADDRESS" type="email" value={email} onChange={setEmail} placeholder="you@example.com" icon={<HiOutlineEnvelope size={15} />} />
-        <Field label="PASSWORD" type="password" value={pass} onChange={setPass} placeholder="Your password" icon={<HiOutlineLockClosed size={15} />} />
-        {error && <div style={{ fontSize: 12, color: C.red, background: '#fef2f2', border: `1.5px solid #fecaca`, borderRadius: 8, padding: '9px 12px', lineHeight: 1.5 }}>{error}</div>}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -2 }}>
-          <button onClick={onForgot} style={{ background: 'none', border: 'none', color: C.accent, fontSize: 11.5, fontWeight: 500 }}
-            onMouseEnter={e => e.currentTarget.style.color = '#1d4ed8'}
-            onMouseLeave={e => e.currentTarget.style.color = C.accent}>
+      <div style={{ padding: '18px 22px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Email address" type="email" value={email} onChange={setEmail} placeholder="you@example.com" icon={<HiOutlineEnvelope size={15} />} />
+        <Field label="Password" type="password" value={pass} onChange={setPass} placeholder="Your password" icon={<HiOutlineLockClosed size={15} />} />
+        {error && <div style={{ fontSize: 12, color: C.red, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, padding: '8px 12px', lineHeight: 1.5 }}>{error}</div>}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -4 }}>
+          <button onClick={onForgot} style={{ background: 'none', border: 'none', color: C.textMuted, fontSize: 12, fontWeight: 500, padding: 0 }}
+            onMouseEnter={e => e.currentTarget.style.color = C.accent}
+            onMouseLeave={e => e.currentTarget.style.color = C.textMuted}>
             Forgot password?
           </button>
         </div>
-        <PrimaryBtn label={`Sign In as ${role === 'admin' ? 'Admin' : 'Analyst'} →`} onClick={submit} loading={loading} />
-        <div style={{ textAlign: 'center', fontSize: 12, color: C.textSub }}>
-          No account?{' '}
-          <button onClick={onRegister} style={{ background: 'none', border: 'none', color: C.accent, fontWeight: 600, fontSize: 12 }}
-            onMouseEnter={e => e.currentTarget.style.color = '#1d4ed8'}
+        <PrimaryBtn label="Sign in" onClick={submit} loading={loading} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 4, fontSize: 12.5, color: C.textSub }}>
+          No account?
+          <button onClick={onRegister} style={{ background: 'none', border: 'none', color: C.accent, fontWeight: 500, fontSize: 12.5, padding: 0 }}
+            onMouseEnter={e => e.currentTarget.style.color = C.accentDark}
             onMouseLeave={e => e.currentTarget.style.color = C.accent}>Create one free</button>
         </div>
       </div>
@@ -445,7 +422,7 @@ function LoginForm({ role, onRoleChange, onLogin, onRegister, onForgot, onClose 
   )
 }
 
-function RegisterForm({ role, onRoleChange, onLogin, onSignIn, onClose }: { role: UserRole; onRoleChange: (r: UserRole) => void; onLogin: (u: User) => void; onSignIn: () => void; onClose: () => void }) {
+function RegisterForm({ role, onRoleChange, onLogin, onSignIn }: { role: UserRole; onRoleChange: (r: UserRole) => void; onLogin: (u: User) => void; onSignIn: () => void }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
@@ -472,25 +449,25 @@ function RegisterForm({ role, onRoleChange, onLogin, onSignIn, onClose }: { role
   }
   return (
     <div>
-      <ModalHeader title="Create your FinBot account" sub="Choose your role and get started for free" onClose={onClose} />
+      <ModalHeader title="Create a free account" sub="Choose your role and get started" />
       <RoleTabs role={role} onChange={onRoleChange} />
-      <div style={{ padding: '18px 24px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Field label="FULL NAME" type="text" value={name} onChange={setName} placeholder="Arjun Sharma" icon={<HiOutlineUser size={15} />} error={errors.name} />
-        <Field label="EMAIL" type="email" value={email} onChange={setEmail} placeholder="you@example.com" icon={<HiOutlineEnvelope size={15} />} error={errors.email} />
-        <Field label="PASSWORD" type="password" value={pass} onChange={setPass} placeholder="Min. 6 characters" icon={<HiOutlineLockClosed size={15} />} error={errors.pass} />
-        <Field label="CONFIRM PASSWORD" type="password" value={confirm} onChange={setConfirm} placeholder="Repeat password" icon={<HiOutlineLockClosed size={15} />} error={errors.confirm} />
+      <div style={{ padding: '18px 22px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Full name" type="text" value={name} onChange={setName} placeholder="Arjun Sharma" icon={<HiOutlineUser size={15} />} error={errors.name} />
+        <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" icon={<HiOutlineEnvelope size={15} />} error={errors.email} />
+        <Field label="Password" type="password" value={pass} onChange={setPass} placeholder="Min. 6 characters" icon={<HiOutlineLockClosed size={15} />} error={errors.pass} />
+        <Field label="Confirm password" type="password" value={confirm} onChange={setConfirm} placeholder="Repeat password" icon={<HiOutlineLockClosed size={15} />} error={errors.confirm} />
         <PasswordStrength pass={pass} />
-        <PrimaryBtn label={`Create ${role === 'admin' ? 'Admin' : 'Analyst'} Account →`} onClick={submit} loading={loading} />
-        <div style={{ textAlign: 'center', fontSize: 12, color: C.textSub }}>
-          Already have an account?{' '}
-          <button onClick={onSignIn} style={{ background: 'none', border: 'none', color: C.accent, fontWeight: 600, cursor: 'pointer', fontSize: 12 }}>Sign in</button>
+        <PrimaryBtn label="Create account" onClick={submit} loading={loading} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 4, fontSize: 12.5, color: C.textSub }}>
+          Already have an account?
+          <button onClick={onSignIn} style={{ background: 'none', border: 'none', color: C.accent, fontWeight: 500, cursor: 'pointer', fontSize: 12.5, padding: 0 }}>Sign in</button>
         </div>
       </div>
     </div>
   )
 }
 
-function ForgotForm({ onSent, onBack, onClose }: { onSent: () => void; onBack: () => void; onClose: () => void }) {
+function ForgotForm({ onSent, onBack }: { onSent: () => void; onBack: () => void }) {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -500,9 +477,9 @@ function ForgotForm({ onSent, onBack, onClose }: { onSent: () => void; onBack: (
   }
   return (
     <div>
-      <ModalHeader title="Reset your password" sub="We'll send a reset link to your email" onClose={onClose} />
-      <div style={{ padding: '20px 24px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Field label="EMAIL" type="email" value={email} onChange={v => { setEmail(v); setError('') }} placeholder="you@example.com" icon={<HiOutlineEnvelope size={15} />} error={error} />
+      <ModalHeader title="Reset password" sub="We'll send a reset link to your email" />
+      <div style={{ padding: '18px 22px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Email" type="email" value={email} onChange={v => { setEmail(v); setError('') }} placeholder="you@example.com" icon={<HiOutlineEnvelope size={15} />} error={error} />
         <PrimaryBtn label="Send Reset Link" onClick={submit} loading={loading} />
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, background: 'none', border: 'none', color: C.textSub, fontSize: 12, cursor: 'pointer' }}>
           <HiOutlineArrowLeft size={12} /> Back to sign in
@@ -512,15 +489,15 @@ function ForgotForm({ onSent, onBack, onClose }: { onSent: () => void; onBack: (
   )
 }
 
-function ForgotSent({ onBack, onClose }: { onBack: () => void; onClose: () => void }) {
+function ForgotSent({ onBack }: { onBack: () => void }) {
   return (
     <div>
-      <ModalHeader title="Check your inbox" sub="Password reset link sent" onClose={onClose} />
-      <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
-        <div style={{ width: 52, height: 52, borderRadius: 14, background: C.greenSoft, border: `1px solid ${C.greenBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <HiOutlineCheckCircle size={26} color={C.green} />
+      <ModalHeader title="Check your inbox" sub="Password reset link sent" />
+      <div style={{ padding: '12px 22px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, textAlign: 'center' }}>
+        <div style={{ width: 44, height: 44, borderRadius: C.radius, background: C.greenSoft, border: `1px solid ${C.greenBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <HiOutlineCheckCircle size={22} color={C.green} />
         </div>
-        <div style={{ fontSize: 13, color: C.textSub, lineHeight: 1.7, maxWidth: 300 }}>
+        <div style={{ fontSize: 13, color: C.textSub, lineHeight: 1.6, maxWidth: 280 }}>
           If an account exists for that email, a reset link will arrive shortly. Check your spam folder too.
         </div>
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: C.accent, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 4 }}>
@@ -533,3 +510,4 @@ function ForgotSent({ onBack, onClose }: { onBack: () => void; onClose: () => vo
 
 /* suppress unused-variable lint for preview arrays used implicitly */
 void PREVIEW_METRICS_PL; void PREVIEW_METRICS_BS; void PREVIEW_METRICS_CF
+void DashPreview; void FloatCard

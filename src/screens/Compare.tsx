@@ -27,8 +27,8 @@ const DS = {
   surface: '#ffffff',
   surfaceHover: '#f8fafc',
   overlay: 'rgba(15,23,42,0.45)',
-  border: 'rgba(15,23,42,0.07)',
-  borderMed: 'rgba(15,23,42,0.1)',
+  border: 'rgba(15,23,42,0.08)',
+  borderMed: 'rgba(15,23,42,0.12)',
   borderStrong: 'rgba(15,23,42,0.16)',
   text: '#0f172a',
   textSub: '#475569',
@@ -36,13 +36,16 @@ const DS = {
   textFaint: '#94a3b8',
   accent: '#2563eb',
   accentDark: '#1d4ed8',
-  accentSoft: 'rgba(37,99,235,0.06)',
-  accentBorder: 'rgba(37,99,235,0.14)',
-  accentHover: 'rgba(37,99,235,0.08)',
+  accentTwo: '#4f46e5',
+  accentSoft: 'rgba(37,99,235,0.08)',
+  accentBorder: 'rgba(37,99,235,0.18)',
+  accentHover: 'rgba(37,99,235,0.12)',
   green: '#16a34a', greenSoft: '#f0fdf4', greenBorder: '#bbf7d0',
   red: '#dc2626', redSoft: '#fef2f2', redBorder: '#fecaca',
   amber: '#d97706', amberSoft: 'rgba(217,119,6,0.08)',
   purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.07)', purpleBorder: 'rgba(124,58,237,0.18)',
+  shadow: 'none',
+  radius: 10,
 }
 
 const DEFAULT_METRICS = ['Sales', 'OPM %', 'Net Profit', 'EPS in Rs', 'Operating Profit', 'Borrowings', 'Total Assets']
@@ -294,7 +297,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
                     onKeyDown={e => { if (e.key === 'Enter') createWatchlist(); if (e.key === 'Escape') setShowNewWLInput(false) }}
                     placeholder="Watchlist name…"
                     style={{ flex: 1, padding: '6px 10px', border: `1px solid ${DS.accentBorder}`, borderRadius: 8, fontSize: 12, outline: 'none', boxShadow: '0 0 0 3px rgba(37,99,235,0.08)' }} />
-                  <button onClick={createWatchlist} style={{ padding: '6px 10px', background: DS.accent, border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Create</button>
+                  <button onClick={createWatchlist} style={{ padding: '6px 10px', background: DS.accent, border: '1px solid rgba(37,99,235,0.12)', borderRadius: DS.radius, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Create</button>
                 </div>
               ) : (
                 <button onClick={() => setShowNewWLInput(true)}
@@ -325,7 +328,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
           ) : (
             <>
               <button onClick={() => setShowAddStocks(true)}
-                style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: DS.accent, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                style={{ padding: '6px 12px', borderRadius: DS.radius, border: `1px solid ${DS.accent}`, background: DS.accent, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
                 <HiOutlinePlus size={13} /> Add Stocks
               </button>
               <div style={{ width: 1, height: 20, background: DS.border }} />
@@ -457,7 +460,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
               </button>
             </div>
             <div style={{ padding: '12px 20px', borderBottom: `1px solid ${DS.border}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', border: `1.5px solid ${DS.accentBorder}`, borderRadius: 8, background: DS.surfaceHover, boxShadow: '0 0 0 3px rgba(37,99,235,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', border: `1px solid ${DS.accentBorder}`, borderRadius: 8, background: DS.surfaceHover, boxShadow: '0 0 0 3px rgba(37,99,235,0.08)' }}>
                 <HiOutlineMagnifyingGlass size={15} color={DS.textFaint} />
                 <input autoFocus value={addSearch} onChange={e => setAddSearch(e.target.value)}
                   placeholder="Search & Add Stocks…"
@@ -520,7 +523,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
                 const allGroupMetrics = newViewGroups.flatMap(g => ANNUAL_METRIC_GROUPS[g] ?? [])
                 const uniqueGroupMetrics = Array.from(new Set(allGroupMetrics))
                 return (
-                  <div style={{ background: DS.surfaceHover, border: `1.5px solid ${DS.accentBorder}`, borderRadius: 12, padding: '14px 14px 12px', marginBottom: 12 }}>
+                  <div style={{ background: DS.surfaceHover, border: `1px solid ${DS.accentBorder}`, borderRadius: 12, padding: '14px 14px 12px', marginBottom: 12 }}>
                     {/* Step 1: multi-select groups */}
                     <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 8 }}>1 — METRIC GROUPS <span style={{ color: DS.accent }}>({newViewGroups.length} selected)</span></div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
@@ -537,7 +540,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
                               setNewViewMetrics(prev => prev.filter(m => !toRemove.has(m)))
                             }
                           }}
-                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, background: sel ? DS.accentSoft : DS.surface, color: sel ? DS.accent : DS.textSub, fontSize: 11, fontWeight: sel ? 700 : 400, cursor: 'pointer', transition: 'all 0.12s' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, background: sel ? DS.accentSoft : DS.surface, color: sel ? DS.accent : DS.textSub, fontSize: 11, fontWeight: sel ? 700 : 400, cursor: 'pointer', transition: 'all 0.12s' }}
                             onMouseEnter={e => { if (!sel) { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.color = DS.accent } }}
                             onMouseLeave={e => { if (!sel) { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.color = DS.textSub } }}>
                             {sel && <HiOutlineCheck size={10} />}
@@ -594,7 +597,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
                         setShowNewView(false); setNewViewGroups([]); setNewViewMetrics([]); setNewViewName('')
                       }}
                       disabled={newViewMetrics.length === 0}
-                      style={{ width: '100%', padding: '9px', borderRadius: 8, border: 'none', background: newViewMetrics.length > 0 ? 'linear-gradient(135deg, #2563eb, #7c3aed)' : '#e2e8f0', color: newViewMetrics.length > 0 ? '#fff' : DS.textFaint, fontSize: 12, fontWeight: 700, cursor: newViewMetrics.length > 0 ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: newViewMetrics.length > 0 ? '0 2px 10px rgba(37,99,235,0.25)' : 'none' }}>
+                      style={{ width: '100%', padding: '9px', borderRadius: 8, border: 'none', background: newViewMetrics.length > 0 ? DS.accent : '#e2e8f0', color: newViewMetrics.length > 0 ? '#fff' : DS.textFaint, fontSize: 12, fontWeight: 700, cursor: newViewMetrics.length > 0 ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: newViewMetrics.length > 0 ? '0 2px 10px rgba(37,99,235,0.25)' : 'none' }}>
                       Save View ({newViewMetrics.length} metrics)
                     </button>
                   </div>
@@ -650,7 +653,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
                 setShowPersonalise(false)
                 if (!visibleTabs.includes(activeTab)) setActiveTab((visibleTabs[0] ?? 'Annual Results'))
               }}
-                style={{ width: '100%', padding: '11px', borderRadius: 8, background: DS.accent, color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                style={{ width: '100%', padding: '10px', borderRadius: DS.radius, background: DS.accent, color: '#fff', border: `1px solid ${DS.accent}`, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
                 SAVE CHANGES
               </button>
             </div>

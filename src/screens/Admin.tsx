@@ -22,22 +22,26 @@ const DS = {
   bg: '#f4f6f9',
   surface: '#ffffff',
   surfaceHover: '#f8fafc',
-  border: 'rgba(15,23,42,0.07)',
-  borderMed: 'rgba(15,23,42,0.1)',
+  border: 'rgba(15,23,42,0.08)',
+  borderMed: 'rgba(15,23,42,0.12)',
   borderStrong: 'rgba(15,23,42,0.16)',
   text: '#0f172a',
   textSub: '#475569',
   textMuted: '#64748b',
   textFaint: '#94a3b8',
   accent: '#2563eb',
-  accentSoft: 'rgba(37,99,235,0.06)',
-  accentBorder: 'rgba(37,99,235,0.14)',
-  accentHover: 'rgba(37,99,235,0.08)',
+  accentDark: '#1d4ed8',
+  accentTwo: '#4f46e5',
+  accentSoft: 'rgba(37,99,235,0.08)',
+  accentBorder: 'rgba(37,99,235,0.18)',
+  accentHover: 'rgba(37,99,235,0.12)',
   green: '#16a34a', greenSoft: '#f0fdf4', greenBorder: '#bbf7d0',
   red: '#dc2626', redSoft: '#fef2f2', redBorder: '#fecaca',
   amber: '#d97706', amberSoft: 'rgba(217,119,6,0.08)', amberBorder: 'rgba(217,119,6,0.22)',
   purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.07)', purpleBorder: 'rgba(124,58,237,0.18)',
   card: '#ffffff',
+  shadow: 'none',
+  radius: 10,
 }
 
 /* ─── Jobs / terminal data ───────────────────────────────────────── */
@@ -78,7 +82,7 @@ const MOCK_USERS = [
   { id: 6, name: 'Kiran Reddy',   email: 'kiran@finbot.in',   watchlists: ['Core Watchlist', 'IT Watch', 'Pharma Watch'],            screeners: [],                                              lastActive: 'Last week' },
 ]
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 4
 
 /* ─── Shared small components ────────────────────────────────────── */
 function SL({ label }: { label: string }) {
@@ -87,8 +91,8 @@ function SL({ label }: { label: string }) {
 
 function Chip({ label, sel, onClick }: { label: string; sel: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{ textAlign: 'left', padding: '5px 9px', borderRadius: 6, background: sel ? DS.accentSoft : '#fff', border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontSize: 10, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-      <div style={{ width: 11, height: 11, borderRadius: 3, border: `1.5px solid ${sel ? DS.accent : 'rgba(100,116,139,0.3)'}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <button onClick={onClick} style={{ textAlign: 'left', padding: '5px 9px', borderRadius: 6, background: sel ? DS.accentSoft : '#fff', border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontSize: 10, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+      <div style={{ width: 11, height: 11, borderRadius: 3, border: `1px solid ${sel ? DS.accent : 'rgba(100,116,139,0.3)'}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         {sel && <HiOutlineCheck size={7} color="#fff" />}
       </div>
       {label}
@@ -140,26 +144,26 @@ function AdminCompanyFilters({ activeGroup, onGroup, onSelect, sectors }: { acti
     { id: 'all' as const, label: 'All Companies' },
   ]
   const values = activeGroup === 'indices' ? ['Nifty 500'] : activeGroup === 'marketCap' ? ['Large Cap', 'Mid Cap', 'Small Cap'] : activeGroup === 'sectors' ? sectors : ['All Companies']
-  return <div style={{ position: 'absolute', top: 54, right: 14, zIndex: 30, width: 540, display: 'flex', background: '#fff', border: `1px solid ${DS.borderMed}`, borderRadius: 10, boxShadow: '0 14px 34px rgba(15,23,42,0.18)', overflow: 'hidden' }}>
-    <div style={{ width: 190, flexShrink: 0, borderRight: `1px solid ${DS.borderMed}` }}>
-      <div style={{ padding: '14px 16px', borderBottom: `1px solid ${DS.borderMed}`, fontSize: 14, fontWeight: 700, color: DS.text }}>Filters</div>
+  return <div style={{ position: 'absolute', top: 54, right: 14, zIndex: 30, width: 440, display: 'flex', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 10, boxShadow: '0 4px 14px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04)', overflow: 'hidden' }}>
+    <div style={{ width: 150, flexShrink: 0, borderRight: `1px solid ${DS.borderMed}` }}>
+      <div style={{ padding: '10px 12px', borderBottom: `1px solid ${DS.borderMed}`, fontSize: 13, fontWeight: 700, color: DS.text }}>Filters</div>
       {groups.map(group => {
         const selected = activeGroup === group.id
-        return <button key={group.id} onClick={() => onGroup(group.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: selected ? '#f1f5f9' : '#fff', border: 'none', borderBottom: `1px solid ${DS.border}`, color: selected ? DS.text : DS.textSub, fontSize: 12, fontWeight: selected ? 700 : 500, textAlign: 'left', cursor: 'pointer' }}>
+        return <button key={group.id} onClick={() => onGroup(group.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: selected ? '#f1f5f9' : '#fff', border: 'none', borderBottom: `1px solid ${DS.border}`, color: selected ? DS.text : DS.textSub, fontSize: 12, fontWeight: selected ? 700 : 500, textAlign: 'left', cursor: 'pointer' }}>
           {group.label}{group.id !== 'all' && <HiOutlineChevronRight size={14} color={selected ? DS.text : DS.textMuted} />}
         </button>
       })}
     </div>
-    <div style={{ flex: 1, maxHeight: 330, overflowY: 'auto' }}>
-      <div style={{ padding: '14px 18px', borderBottom: `1px solid ${DS.borderMed}`, fontSize: 12, fontWeight: 700, color: DS.text }}>{groups.find(group => group.id === activeGroup)?.label}</div>
-      {values.map(value => <button key={value} onClick={() => onSelect(value)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', background: '#fff', border: 'none', borderBottom: `1px dashed ${DS.borderMed}`, color: DS.textSub, fontSize: 12, textAlign: 'left', cursor: 'pointer' }} onMouseEnter={event => event.currentTarget.style.background = '#f8fafc'} onMouseLeave={event => event.currentTarget.style.background = '#fff'}>{value}<HiOutlineChevronRight size={13} color={DS.textFaint} /></button>)}
+    <div style={{ flex: 1, maxHeight: 280, overflowY: 'auto' }}>
+      <div style={{ padding: '10px 14px', borderBottom: `1px solid ${DS.borderMed}`, fontSize: 12, fontWeight: 700, color: DS.text }}>{groups.find(group => group.id === activeGroup)?.label}</div>
+      {values.map(value => <button key={value} onClick={() => onSelect(value)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fff', border: 'none', borderBottom: `1px dashed ${DS.borderMed}`, color: DS.textSub, fontSize: 12, textAlign: 'left', cursor: 'pointer' }} onMouseEnter={event => event.currentTarget.style.background = '#f8fafc'} onMouseLeave={event => event.currentTarget.style.background = '#fff'}>{value}<HiOutlineChevronRight size={13} color={DS.textFaint} /></button>)}
     </div>
   </div>
 }
 
 function AdminCompanyTable({ companies }: { companies: { name: string; sector: string }[] }) {
   return <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 720 }}>
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(190px, 1.5fr) minmax(150px, 1.1fr) repeat(4, minmax(105px, 0.8fr))', background: '#f3f4f6', borderBottom: `1px solid ${DS.borderMed}`, color: DS.textMuted, fontSize: 10, fontWeight: 700 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(190px, 1.5fr) minmax(150px, 1.1fr) repeat(4, minmax(105px, 0.8fr))', background: '#f3f4f6', borderBottom: `1px solid ${DS.borderMed}`, color: DS.textMuted, fontSize: 10, fontWeight: 700, position: 'sticky', top: 0, zIndex: 10 }}>
       {['Company Name', 'Sector', 'Revenue', 'Net Profit', 'OPM %', 'Total Assets'].map(label => <div key={label} style={{ padding: '10px 12px', textAlign: label === 'Company Name' || label === 'Sector' ? 'left' : 'right' }}>{label}</div>)}
     </div>
     {companies.map((co, index) => {
@@ -262,21 +266,21 @@ export function AdminDashboard({ botConfigs }: { botConfigs: BotConfig[] }) {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflow: 'hidden', padding: '20px 24px 28px' }}>
-        <div style={{ position: 'relative', background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(15,23,42,0.04)' }}>
-          <div style={{ padding: '10px 14px', borderBottom: `1px solid ${DS.border}`, background: '#fafbfc' }}>
+      <div style={{ flex: 1, overflow: 'hidden', padding: '20px 24px 28px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'relative', background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: DS.radius, overflow: 'hidden', display: 'flex', flexDirection: 'column', flex: '0 1 auto', maxHeight: '100%' }}>
+          <div style={{ padding: '10px 14px', borderBottom: `1px solid ${DS.border}`, background: DS.surfaceHover, flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <HiOutlineChartBar size={15} color={DS.accent} />
               <span style={{ fontSize: 13, fontWeight: 700, color: DS.text, flex: 1 }}>Companies</span>
               <span style={{ fontSize: 10, color: DS.textFaint }}>{ALL_CO_LIST.length} listed</span>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: `1.5px solid ${DS.border}`, borderRadius: 8, padding: '7px 11px' }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: `1px solid ${DS.border}`, borderRadius: 8, padding: '7px 11px' }}>
                 <HiOutlineMagnifyingGlass size={13} color={DS.textFaint} />
                 <input value={search} onChange={e => handleSearch(e.target.value)} placeholder="Search companies or sectors…" style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 12, color: DS.text, fontFamily: 'Inter, sans-serif' }} />
                 {search && <button onClick={() => handleSearch('')} style={{ background: 'none', border: 'none', color: DS.textFaint, display: 'flex', padding: 0, cursor: 'pointer' }}><HiOutlineXMark size={13} /></button>}
               </div>
-              <button onClick={() => setShowFilterPopup(value => !value)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', background: showFilterPopup ? DS.accentSoft : '#fff', border: `1.5px solid ${showFilterPopup ? DS.accent : DS.borderMed}`, borderRadius: 8, color: showFilterPopup ? DS.accent : DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}><HiOutlineFunnel size={13} /> Filter</button>
+              <button onClick={() => setShowFilterPopup(value => !value)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', background: showFilterPopup ? DS.accentSoft : '#fff', border: `1px solid ${showFilterPopup ? DS.accent : DS.borderMed}`, borderRadius: 8, color: showFilterPopup ? DS.accent : DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}><HiOutlineFunnel size={13} /> Filter</button>
             </div>
             {showFilterPopup && <AdminCompanyFilters activeGroup={filterGroup} onGroup={group => { setFilterGroup(group); setPage(1) }} onSelect={value => {
               setShowFilterPopup(false); setPage(1)
@@ -286,10 +290,12 @@ export function AdminDashboard({ botConfigs }: { botConfigs: BotConfig[] }) {
               else { setFilterGroup('sectors'); setNiftyOnly(false); setCapFilter('All'); setSectorFilter(value) }
             }} sectors={UNIQUE_SECTORS_AD} />}
           </div>
-          <AdminCompanyTable companies={pageData} />
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <AdminCompanyTable companies={pageData} />
+          </div>
 
           {/* Footer */}
-          <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafbfc', borderTop: `1px solid ${DS.border}` }}>
+          <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: DS.surfaceHover, borderTop: `1px solid ${DS.border}`, flexShrink: 0 }}>
             <span style={{ fontSize: 11, color: DS.textFaint }}>
               {(safePage - 1) * AD_PAGE + 1}–{Math.min(safePage * AD_PAGE, filtered.length)} of {filtered.length} companies
             </span>
@@ -297,7 +303,7 @@ export function AdminDashboard({ botConfigs }: { botConfigs: BotConfig[] }) {
 
           {/* Smart pagination — only when expanded */}
           {totalPages > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '8px 14px', borderTop: `1px solid ${DS.border}`, background: '#fafbfc' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '8px 14px', borderTop: `1px solid ${DS.border}`, background: DS.surfaceHover, flexShrink: 0 }}>
               <button disabled={safePage === 1} onClick={() => setPage(p => p - 1)}
                 style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${DS.border}`, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: safePage === 1 ? 0.35 : 1, color: DS.textSub, cursor: safePage === 1 ? 'default' : 'pointer' }}>
                 <HiOutlineChevronLeft size={13} />
@@ -378,7 +384,7 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
       {/* Header */}
       <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, padding: '0 20px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, height: 48 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <HiOutlineCommandLine size={14} color="#fff" />
           </div>
           <div>
@@ -392,7 +398,7 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
             </div>
             {activeTab === 'console' && (
               <button onClick={() => { jobs.filter(j => j.state !== 'running').forEach(j => startJob(j.id)) }}
-                style={{ background: DS.accent, border: 'none', borderRadius: 8, padding: '6px 14px', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 1px 3px rgba(37,99,235,0.25)' }}>
+                style={{ background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 6, padding: '4px 10px', color: DS.accent, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: 'none' }}>
                 <HiOutlineArrowPath size={13} /> Run All
               </button>
             )}
@@ -421,7 +427,7 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
             {jobs.map(job => {
               const st = job.state
               return (
-                <div key={job.id} style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, padding: 16, boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)' }}>
+                <div key={job.id} style={{ background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, padding: 12, boxShadow: 'none' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                     <div style={{ width: 36, height: 36, borderRadius: 9, background: job.bg, border: `1px solid ${job.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <job.Icon size={17} color={job.color} />
@@ -457,7 +463,7 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
           </div>
 
           {/* Live terminal */}
-          <div style={{ display: 'flex', flexDirection: 'column', background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(15,23,42,0.04)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, overflow: 'hidden', boxShadow: 'none' }}>
             <div style={{ padding: '10px 16px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc', flexShrink: 0 }}>
               <div style={{ display: 'flex', gap: 5 }}>
                 {['#ef4444', '#f59e0b', '#22c55e'].map(c => <div key={c} style={{ width: 9, height: 9, borderRadius: '50%', background: c, opacity: 0.7 }} />)}
@@ -506,7 +512,7 @@ function UsersDataTab() {
   const pageUsers = MOCK_USERS.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '20px 24px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ flex: 1, overflow: 'hidden', padding: '16px 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
       {/* Summary stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -515,7 +521,7 @@ function UsersDataTab() {
           { label: 'Total Watchlists', value: MOCK_USERS.reduce((a, u) => a + u.watchlists.length, 0), icon: <HiOutlineBookmark size={16} color={DS.green} />, bg: DS.greenSoft, border: DS.greenBorder, color: DS.green },
           { label: 'Total Screeners', value: MOCK_USERS.reduce((a, u) => a + u.screeners.length, 0), icon: <HiOutlineAdjustmentsHorizontal size={16} color={DS.purple} />, bg: DS.purpleSoft, border: DS.purpleBorder, color: DS.purple },
         ].map(stat => (
-          <div key={stat.label} style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)' }}>
+          <div key={stat.label} style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: 'none' }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: stat.bg, border: `1px solid ${stat.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{stat.icon}</div>
             <div>
               <div style={{ fontSize: 22, fontWeight: 800, color: stat.color }}>{stat.value}</div>
@@ -526,8 +532,8 @@ function UsersDataTab() {
       </div>
 
       {/* Analyst accounts */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexShrink: 0 }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em' }}>ANALYST ACCOUNTS</div>
           {totalPages > 1 && (
             <div style={{ fontSize: 10, color: DS.textFaint }}>
@@ -536,14 +542,14 @@ function UsersDataTab() {
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', minHeight: 0, paddingRight: 4 }}>
           {pageUsers.map(u => {
             const expanded = expandedUser === u.id
             return (
-              <div key={u.id} style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)' }}>
+              <div key={u.id} style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', boxShadow: 'none', flexShrink: 0 }}>
                 <button onClick={() => setExpandedUser(expanded ? null : u.id)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
                     {u.name.charAt(0)}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -557,35 +563,39 @@ function UsersDataTab() {
                   </div>
                 </button>
                 {expanded && (
-                  <div style={{ borderTop: `1px solid ${DS.border}`, padding: '14px 18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                    <div>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ borderTop: `1px solid ${DS.border}`, padding: '14px 18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
                         <HiOutlineBookmark size={10} /> WATCHLISTS ({u.watchlists.length})
                       </div>
-                      {u.watchlists.length === 0
-                        ? <div style={{ fontSize: 11, color: DS.textFaint, fontStyle: 'italic' }}>No watchlists yet</div>
-                        : u.watchlists.map(wl => (
-                          <div key={wl} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 10px', background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 6, marginBottom: 5 }}>
-                            <HiOutlineCheckCircle size={12} color={DS.accent} />
-                            <span style={{ fontSize: 12, color: DS.accent, fontWeight: 500 }}>{wl}</span>
-                            {wl === 'Core Watchlist' && <span style={{ marginLeft: 'auto', fontSize: 8, color: DS.textFaint }}>DEFAULT</span>}
-                          </div>
-                        ))
-                      }
+                      <div style={{ flex: 1, overflowY: 'auto', maxHeight: 150, paddingRight: 4, paddingBottom: 4, minHeight: 0 }}>
+                        {u.watchlists.length === 0
+                          ? <div style={{ fontSize: 11, color: DS.textFaint, fontStyle: 'italic' }}>No watchlists yet</div>
+                          : u.watchlists.map(wl => (
+                            <div key={wl} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 12px', background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 6, marginBottom: 6 }}>
+                              <HiOutlineCheckCircle size={13} color={DS.accent} />
+                              <span style={{ fontSize: 12, color: DS.accent, fontWeight: 500 }}>{wl}</span>
+                              {wl === 'Core Watchlist' && <span style={{ marginLeft: 'auto', fontSize: 9, color: DS.textFaint }}>DEFAULT</span>}
+                            </div>
+                          ))
+                        }
+                      </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
                         <HiOutlineAdjustmentsHorizontal size={10} /> SCREENERS ({u.screeners.length})
                       </div>
-                      {u.screeners.length === 0
-                        ? <div style={{ fontSize: 11, color: DS.textFaint, fontStyle: 'italic' }}>No saved screeners</div>
-                        : u.screeners.map(sc => (
-                          <div key={sc} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 10px', background: DS.purpleSoft, border: `1px solid ${DS.purpleBorder}`, borderRadius: 6, marginBottom: 5 }}>
-                            <HiOutlineAdjustmentsHorizontal size={12} color={DS.purple} />
-                            <span style={{ fontSize: 12, color: DS.purple, fontWeight: 500 }}>{sc}</span>
-                          </div>
-                        ))
-                      }
+                      <div style={{ flex: 1, overflowY: 'auto', maxHeight: 150, paddingRight: 4, paddingBottom: 4, minHeight: 0 }}>
+                        {u.screeners.length === 0
+                          ? <div style={{ fontSize: 11, color: DS.textFaint, fontStyle: 'italic' }}>No saved screeners</div>
+                          : u.screeners.map(sc => (
+                            <div key={sc} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 12px', background: DS.purpleSoft, border: `1px solid ${DS.purpleBorder}`, borderRadius: 6, marginBottom: 6 }}>
+                              <HiOutlineAdjustmentsHorizontal size={13} color={DS.purple} />
+                              <span style={{ fontSize: 12, color: DS.purple, fontWeight: 500 }}>{sc}</span>
+                            </div>
+                          ))
+                        }
+                      </div>
                     </div>
                   </div>
                 )}
@@ -594,9 +604,8 @@ function UsersDataTab() {
           })}
         </div>
 
-        {/* Paginator */}
         {totalPages > 1 && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, flexShrink: 0 }}>
             <button onClick={() => setPage(p => p - 1)} disabled={page === 0}
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 8, border: `1px solid ${DS.border}`, background: page === 0 ? '#f8faff' : DS.surface, color: page === 0 ? DS.textFaint : DS.textSub, fontSize: 11, fontWeight: 500, cursor: page === 0 ? 'not-allowed' : 'pointer' }}>
               <HiOutlineChevronLeft size={12} /> Prev
@@ -634,7 +643,7 @@ function DefaultConfigTab({ botConfigs, onUpdateBotConfig }: {
   )
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '20px 24px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ flex: 1, overflow: 'hidden', padding: '16px 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
         <div style={{ width: 42, height: 42, borderRadius: 11, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -652,14 +661,14 @@ function DefaultConfigTab({ botConfigs, onUpdateBotConfig }: {
           </div>
           {!editing && (
             <button onClick={() => setEditing(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 8, background: DS.accent, border: 'none', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(37,99,235,0.25)' }}>
-              <HiOutlinePencilSquare size={13} /> Edit
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: DS.accent, border: 'none', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', boxShadow: 'none' }}>
+              <HiOutlinePencilSquare size={12} /> Edit
             </button>
           )}
           {editing && (
             <button onClick={() => setEditing(false)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 8, background: DS.surface, border: `1px solid ${DS.borderMed}`, color: DS.textSub, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-              <HiOutlineXMark size={13} /> Cancel
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: DS.surface, border: `1px solid ${DS.borderMed}`, color: DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer', boxShadow: 'none' }}>
+              <HiOutlineXMark size={12} /> Cancel
             </button>
           )}
         </div>
@@ -692,10 +701,10 @@ function DefaultConfigReadOnly({ config }: { config: BotConfig }) {
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minHeight: 0 }}>
       {/* Sectors + Response Style row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 14 }}>
-        <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '14px 16px', boxShadow: '0 2px 8px rgba(15,23,42,0.04)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, flexShrink: 0 }}>
+        <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '12px 14px', boxShadow: 'none' }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em', marginBottom: 10 }}>SECTORS ({sectors.length})</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {sectors.map(s => (
@@ -704,7 +713,7 @@ function DefaultConfigReadOnly({ config }: { config: BotConfig }) {
             {sectors.length === 0 && <span style={{ fontSize: 11, color: DS.textFaint, fontStyle: 'italic' }}>No sectors configured</span>}
           </div>
         </div>
-        <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '14px 16px', boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 140 }}>
+        <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '12px 14px', boxShadow: 'none', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 140 }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em' }}>RESPONSE STYLE</div>
           <span style={{ fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 6, background: sc.bg, border: `1px solid ${sc.border}`, color: sc.color, textTransform: 'capitalize', textAlign: 'center' }}>
             {config.responseStyle}
@@ -713,12 +722,12 @@ function DefaultConfigReadOnly({ config }: { config: BotConfig }) {
       </div>
 
       {/* Companies by sector */}
-      <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)' }}>
-        <div style={{ padding: '12px 16px', borderBottom: `1px solid ${DS.border}`, background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', boxShadow: 'none', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${DS.border}`, background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <HiOutlineUsers size={13} color={DS.accent} />
           <span style={{ fontSize: 11, fontWeight: 700, color: DS.text, flex: 1 }}>Companies ({config.companies.length})</span>
         </div>
-        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
           {Object.entries(companiesBySector).map(([sec, cos]) => (
             <div key={sec}>
               <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 6 }}>{sec}</div>
@@ -734,12 +743,12 @@ function DefaultConfigReadOnly({ config }: { config: BotConfig }) {
       </div>
 
       {/* Metrics */}
-      <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)' }}>
-        <div style={{ padding: '12px 16px', borderBottom: `1px solid ${DS.border}`, background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', boxShadow: 'none', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${DS.border}`, background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <HiOutlineAdjustmentsHorizontal size={13} color={DS.accent} />
           <span style={{ fontSize: 11, fontWeight: 700, color: DS.text }}>Metrics ({config.metrics.length})</span>
         </div>
-        <div style={{ padding: '14px 16px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        <div style={{ padding: '10px 14px', display: 'flex', flexWrap: 'wrap', gap: 6, overflowY: 'auto' }}>
           {config.metrics.map(m => (
             <span key={m} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, background: '#f1f5f9', border: `1px solid ${DS.border}`, color: DS.textSub, fontWeight: 500 }}>{m}</span>
           ))}
@@ -798,7 +807,7 @@ function DefaultBotConfigEditor({ config, onSave }: {
   }
 
   return (
-    <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 220px)' }}>
+    <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', boxShadow: 'none', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       {/* Card header — fixed */}
       <div style={{ padding: '14px 18px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #2563eb22, #7c3aed22)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -906,7 +915,7 @@ function DefaultBotConfigEditor({ config, onSave }: {
                   <div style={{ padding: '6px 10px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {vis.map(m => {
                       const sel = editMetrics.includes(m)
-                      return <button key={m} onClick={() => toggleMetric(m)} style={{ padding: '3px 8px', borderRadius: 12, fontSize: 10, background: sel ? DS.accentSoft : '#fff', border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>{sel && <HiOutlineCheck size={7} />}{m}</button>
+                      return <button key={m} onClick={() => toggleMetric(m)} style={{ padding: '3px 8px', borderRadius: 12, fontSize: 10, background: sel ? DS.accentSoft : '#fff', border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>{sel && <HiOutlineCheck size={7} />}{m}</button>
                     })}
                   </div>
                 )}
@@ -921,12 +930,12 @@ function DefaultBotConfigEditor({ config, onSave }: {
         <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
           {(['concise', 'detailed', 'analytical'] as const).map(st => (
             <button key={st} onClick={() => setResponseStyle(st)}
-              style={{ flex: 1, padding: '7px', borderRadius: 8, border: `1.5px solid ${responseStyle === st ? DS.accentBorder : DS.border}`, background: responseStyle === st ? DS.accentSoft : 'transparent', color: responseStyle === st ? DS.accent : DS.textSub, fontSize: 11, fontWeight: responseStyle === st ? 600 : 400, cursor: 'pointer', textTransform: 'capitalize' }}>{st}</button>
+              style={{ flex: 1, padding: '7px', borderRadius: 8, border: `1px solid ${responseStyle === st ? DS.accentBorder : DS.border}`, background: responseStyle === st ? DS.accentSoft : 'transparent', color: responseStyle === st ? DS.accent : DS.textSub, fontSize: 11, fontWeight: responseStyle === st ? 600 : 400, cursor: 'pointer', textTransform: 'capitalize' }}>{st}</button>
           ))}
         </div>
 
         <button onClick={save}
-          style={{ width: '100%', padding: '11px', border: 'none', borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 1px 3px rgba(37,99,235,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          style={{ width: '100%', padding: '8px', border: `1px solid ${DS.accentBorder}`, borderRadius: 6, background: DS.accentSoft, color: DS.accent, fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           <HiOutlineArrowPath size={14} /> Save Changes — Apply to All Analyst Logins
         </button>
       </div>
@@ -1002,7 +1011,7 @@ function DefaultWatchlistEditor({ watchlist, onSave, alwaysExpanded = false }: {
   const allSectorCos = Array.from(new Set(sectors.flatMap(s => SECTOR_COMPANIES[s] ?? [])))
 
   return (
-    <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)' }}>
+    <div style={{ background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, overflow: 'hidden', boxShadow: 'none' }}>
       {/* Card header */}
       <div style={{ padding: '14px 18px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ width: 30, height: 30, borderRadius: 8, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1161,7 +1170,7 @@ function DefaultWatchlistEditor({ watchlist, onSave, alwaysExpanded = false }: {
                         const sel = editMetrics.includes(m)
                         return (
                           <button key={m} onClick={() => toggleMetric(m)}
-                            style={{ padding: '3px 8px', borderRadius: 12, fontSize: 10, background: sel ? DS.accentSoft : '#fff', border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
+                            style={{ padding: '3px 8px', borderRadius: 12, fontSize: 10, background: sel ? DS.accentSoft : '#fff', border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
                             {sel && <HiOutlineCheck size={7} />}{m}
                           </button>
                         )
@@ -1178,8 +1187,8 @@ function DefaultWatchlistEditor({ watchlist, onSave, alwaysExpanded = false }: {
 
           {/* Save button */}
           <button onClick={save}
-            style={{ marginTop: 16, width: '100%', padding: '11px', border: 'none', borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 1px 3px rgba(37,99,235,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <HiOutlineArrowPath size={14} /> Save Changes — Apply to All Analyst Logins
+            style={{ marginTop: 12, width: '100%', padding: '8px', border: `1px solid ${DS.accentBorder}`, borderRadius: 6, background: DS.accentSoft, color: DS.accent, fontSize: 11, fontWeight: 600, cursor: 'pointer', boxShadow: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+            <HiOutlineArrowPath size={13} /> Save Changes — Apply to All Analyst Logins
           </button>
         </div>
       )}
