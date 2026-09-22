@@ -5,7 +5,7 @@ import {
   HiOutlineMagnifyingGlass, HiOutlineChevronLeft,
   HiOutlineArrowTrendingUp, HiOutlineExclamationTriangle,
   HiOutlineChatBubbleLeftRight, HiOutlineClipboardDocumentList,
-  HiOutlineXMark, HiOutlineFunnel, HiOutlineChevronDown,
+  HiOutlineXMark, HiOutlineFunnel, HiOutlineChevronDown, HiOutlineCheck,
 } from 'react-icons/hi2'
 import { BsRobot } from 'react-icons/bs'
 import { ALL_SECTORS, SECTOR_COMPANIES, getAnnualData } from '../data/finData'
@@ -14,6 +14,8 @@ import type { Screen, WatchlistItem } from '../App'
 interface Props {
   onNavigate: (screen: Screen) => void
   watchlists: WatchlistItem[]
+  activeWatchlistId: number
+  onUpdateWatchlist: (id: number, patch: Partial<Omit<WatchlistItem, 'id' | 'createdAt'>>) => void
   recentScreenerRuns: { query: string; count: number; runAt: string }[]
   recentChatMessages: string[]
 }
@@ -156,6 +158,58 @@ function WidgetHeader({ icon, title, meta, action }: { icon: React.ReactNode; ti
   )
 }
 
+function CompanyFilters({ activeGroup, onGroup, onSelect, sectors }: { activeGroup: 'indices' | 'sectors' | 'marketCap' | 'all'; onGroup: (group: 'indices' | 'sectors' | 'marketCap' | 'all') => void; onSelect: (value: string) => void; sectors: string[] }) {
+  const groups = [
+    { id: 'indices' as const, label: 'Key Indices' },
+    { id: 'sectors' as const, label: 'Sectors' },
+    { id: 'marketCap' as const, label: 'Market Cap' },
+    { id: 'all' as const, label: 'All Companies' },
+  ]
+  const values = activeGroup === 'indices' ? ['Nifty 500'] : activeGroup === 'marketCap' ? ['Large Cap', 'Mid Cap', 'Small Cap'] : activeGroup === 'sectors' ? sectors : ['All Companies']
+  return (
+    <div style={{ position: 'absolute', top: 54, right: 14, zIndex: 30, width: 540, display: 'flex', background: '#fff', border: `1px solid ${DS.borderMed}`, borderRadius: 10, boxShadow: '0 14px 34px rgba(15,23,42,0.18)', overflow: 'hidden' }}>
+      <div style={{ width: 190, flexShrink: 0, borderRight: `1px solid ${DS.borderMed}` }}>
+        <div style={{ padding: '14px 16px', borderBottom: `1px solid ${DS.borderMed}`, fontSize: 14, fontWeight: 700, color: DS.text }}>Filters</div>
+        {groups.map(group => {
+          const selected = activeGroup === group.id
+          return <button key={group.id} onClick={() => onGroup(group.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: selected ? '#f1f5f9' : '#fff', border: 'none', borderBottom: `1px solid ${DS.border}`, color: selected ? DS.text : DS.textSub, fontSize: 12, fontWeight: selected ? 700 : 500, textAlign: 'left', cursor: 'pointer' }}>
+            {group.label}{group.id !== 'all' && <HiOutlineChevronRight size={14} color={selected ? DS.text : DS.textMuted} />}
+          </button>
+        })}
+      </div>
+      <div style={{ flex: 1, maxHeight: 330, overflowY: 'auto' }}>
+        <div style={{ padding: '14px 18px', borderBottom: `1px solid ${DS.borderMed}`, fontSize: 12, fontWeight: 700, color: DS.text }}>{groups.find(group => group.id === activeGroup)?.label}</div>
+        {values.map(value => <button key={value} onClick={() => onSelect(value)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', background: '#fff', border: 'none', borderBottom: `1px dashed ${DS.borderMed}`, color: DS.textSub, fontSize: 12, textAlign: 'left', cursor: 'pointer' }} onMouseEnter={event => event.currentTarget.style.background = '#f8fafc'} onMouseLeave={event => event.currentTarget.style.background = '#fff'}>{value}<HiOutlineChevronRight size={13} color={DS.textFaint} /></button>)}
+      </div>
+    </div>
+  )
+}
+
+function CompanyTable({ companies, watchlistCompanies, onAddCompany }: { companies: { name: string; sector: string }[]; watchlistCompanies: string[]; onAddCompany: (company: string) => void }) {
+  return <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 720 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(190px, 1.5fr) minmax(150px, 1.1fr) repeat(4, minmax(105px, 0.8fr))', background: '#f3f4f6', borderBottom: `1px solid ${DS.borderMed}`, color: DS.textMuted, fontSize: 10, fontWeight: 700 }}>
+      {['Company Name', 'Sector', 'Revenue', 'Net Profit', 'OPM %', 'Total Assets'].map(label => <div key={label} style={{ padding: '10px 12px', textAlign: label === 'Company Name' || label === 'Sector' ? 'left' : 'right' }}>{label}</div>)}
+    </div>
+    {companies.map((co, index) => {
+      const row = (getAnnualData(co.name)['2025'] ?? getAnnualData(co.name)['2024'] ?? {}) as Record<string, unknown>
+      const format = (value: unknown, suffix = '') => value === undefined ? '—' : `${Number(value).toLocaleString('en-IN', { maximumFractionDigits: 1 })}${suffix}`
+      return <div key={`${co.name}-${index}`} style={{ display: 'grid', gridTemplateColumns: 'minmax(190px, 1.5fr) minmax(150px, 1.1fr) repeat(4, minmax(105px, 0.8fr))', borderBottom: `1px solid ${DS.border}`, background: index % 2 ? '#fbfbfc' : '#fff', color: DS.text, fontSize: 12 }}>
+        <div style={{ padding: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={() => onAddCompany(co.name)} disabled={watchlistCompanies.includes(co.name)} title={watchlistCompanies.includes(co.name) ? 'Already in watchlist' : 'Add to watchlist'} style={{ width: 20, height: 20, padding: 0, border: 'none', background: 'transparent', color: watchlistCompanies.includes(co.name) ? DS.green : DS.accent, fontSize: 18, lineHeight: 1, cursor: watchlistCompanies.includes(co.name) ? 'default' : 'pointer' }}>
+            {watchlistCompanies.includes(co.name) ? <HiOutlineCheck size={16} /> : '+'}
+          </button>
+          {co.name}
+        </div>
+        <div style={{ padding: '12px', color: DS.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{co.sector}</div>
+        <div style={{ padding: '12px', textAlign: 'right', fontWeight: 600 }}>{format(row.Sales, ' Cr')}</div>
+        <div style={{ padding: '12px', textAlign: 'right', color: Number(row['Net Profit']) >= 0 ? DS.green : DS.red, fontWeight: 600 }}>{format(row['Net Profit'], ' Cr')}</div>
+        <div style={{ padding: '12px', textAlign: 'right', color: DS.green, fontWeight: 600 }}>{format(row['OPM %'], '%')}</div>
+        <div style={{ padding: '12px', textAlign: 'right', color: DS.textSub }}>{format(row['Total Assets'], ' Cr')}</div>
+      </div>
+    })}
+  </div></div>
+}
+
 function NavLink({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button onClick={onClick} style={{ fontSize: 11, color: DS.accent, background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: 2, fontWeight: 600, padding: 0, cursor: 'pointer' }}
@@ -182,14 +236,16 @@ function EmptyState({ icon, text, cta, onCta }: { icon: React.ReactNode; text: s
   )
 }
 
-const PAGE_SIZE = 12
+const PAGE_SIZE = 8
 
-export default function Dashboard({ onNavigate, watchlists, recentScreenerRuns, recentChatMessages }: Props) {
+export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, onUpdateWatchlist, recentScreenerRuns, recentChatMessages }: Props) {
   const [activeInsight, setActiveInsight] = useState<number | null>(null)
-  const [showAll, setShowAll] = useState(false)
   const [search, setSearch] = useState('')
   const [sectorFilter, setSectorFilter] = useState('All')
-  const [niftyOnly, setNiftyOnly] = useState(false)
+  const [niftyOnly, setNiftyOnly] = useState(true)
+  const [capFilter, setCapFilter] = useState('All')
+  const [filterGroup, setFilterGroup] = useState<'indices' | 'sectors' | 'marketCap' | 'all'>('indices')
+  const [showFilterPopup, setShowFilterPopup] = useState(false)
   const [showSectorMenu, setShowSectorMenu] = useState(false)
   const [page, setPage] = useState(1)
 
@@ -198,8 +254,8 @@ export default function Dashboard({ onNavigate, watchlists, recentScreenerRuns, 
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const dateStr = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-  const activeWatchlist = watchlists[0]
-  const watchlistCompanies = (activeWatchlist?.companies ?? []).slice(0, 5)
+  const activeWatchlist = watchlists.find(watchlist => watchlist.id === activeWatchlistId) ?? watchlists[0]
+  const watchlistCompanies = activeWatchlist?.companies ?? []
   const watchlistMetrics = activeWatchlist?.metrics ?? []
 
   const UNIQUE_SECTORS = Array.from(new Set(ALL_COMPANIES_LIST.map(c => c.sector)))
@@ -210,18 +266,26 @@ export default function Dashboard({ onNavigate, watchlists, recentScreenerRuns, 
       if (q && !c.name.toLowerCase().includes(q) && !c.sector.toLowerCase().includes(q)) return false
       if (sectorFilter !== 'All' && c.sector !== sectorFilter) return false
       if (niftyOnly && !NIFTY_500_SET.has(c.name)) return false
+      if (capFilter !== 'All') {
+        const assets = Number(getAnnualData(c.name)['2025']?.['Total Assets'] ?? 0)
+        if (capFilter === 'Large Cap' && assets < 100000) return false
+        if (capFilter === 'Mid Cap' && (assets < 30000 || assets >= 100000)) return false
+        if (capFilter === 'Small Cap' && assets >= 30000) return false
+      }
       return true
     })
-  }, [search, sectorFilter, niftyOnly])
+  }, [search, sectorFilter, niftyOnly, capFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
-  const pageData = showAll
-    ? filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
-    : ALL_COMPANIES_LIST.slice(0, 6)
+  const pageData = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   const handleSearch = (v: string) => { setSearch(v); setPage(1) }
   const handleSector = (v: string) => { setSectorFilter(v); setPage(1); setShowSectorMenu(false) }
+  const addCompanyToWatchlist = (company: string) => {
+    if (!activeWatchlist || activeWatchlist.companies.includes(company)) return
+    onUpdateWatchlist(activeWatchlist.id, { companies: [...activeWatchlist.companies, company] })
+  }
 
   const pageNums = getPageNumbers(safePage, totalPages)
 
@@ -245,93 +309,52 @@ export default function Dashboard({ onNavigate, watchlists, recentScreenerRuns, 
       </div>
 
       {/* ── Scrollable body ─────────────────────────────────────── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px 32px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16, alignItems: 'start' }}>
+      <div style={{ flex: 1, overflow: 'hidden', padding: '20px 24px 32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 16, alignItems: 'start' }}>
 
           {/* ── LEFT: Companies ─────────────────────────────── */}
-          <WidgetCard>
+          <WidgetCard style={{ position: 'relative' }}>
             {/* Header */}
             <div style={{ padding: '12px 16px', borderBottom: `1px solid ${DS.border}`, background: '#fafbfc' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: showAll ? 8 : 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <HiOutlineChartBar size={15} color={DS.accent} />
                 <span style={{ fontSize: 12.5, fontWeight: 600, color: DS.text, flex: 1 }}>Companies</span>
                 <span style={{ fontSize: 10, color: DS.textFaint }}>{ALL_COMPANIES_LIST.length} listed</span>
               </div>
 
-              {/* Search + filter row — always visible */}
+              {/* Search row */}
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 {/* Search */}
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 7, background: DS.surface, border: `1.5px solid ${DS.borderMed}`, borderRadius: 8, padding: '6px 10px' }}>
                   <HiOutlineMagnifyingGlass size={13} color={DS.textFaint} />
-                  <input value={search} onChange={e => { handleSearch(e.target.value); if (!showAll) setShowAll(true) }}
+                  <input value={search} onChange={e => handleSearch(e.target.value)}
                     placeholder="Search companies…"
                     style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 12, color: DS.text, fontFamily: 'Inter, sans-serif' }} />
                   {search && <button onClick={() => handleSearch('')} style={{ background: 'none', border: 'none', color: DS.textFaint, display: 'flex', padding: 0, cursor: 'pointer' }}><HiOutlineXMark size={13} /></button>}
                 </div>
 
-                {/* Sector filter */}
-                <div style={{ position: 'relative' }}>
-                  <button onClick={() => setShowSectorMenu(v => !v)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 11px', background: sectorFilter !== 'All' ? DS.accentSoft : DS.surface, border: `1.5px solid ${sectorFilter !== 'All' ? DS.accentBorder : DS.borderMed}`, borderRadius: 8, fontSize: 11, color: sectorFilter !== 'All' ? DS.accent : DS.textSub, fontWeight: sectorFilter !== 'All' ? 600 : 400, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    <HiOutlineFunnel size={12} />
-                    {sectorFilter === 'All' ? 'Sector' : sectorFilter.split(' ')[0]}
-                    <HiOutlineChevronDown size={10} />
-                  </button>
-                  {showSectorMenu && (
-                    <div style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 50, background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, boxShadow: '0 8px 24px rgba(15,23,42,0.10), 0 2px 8px rgba(15,23,42,0.06)', width: 200, maxHeight: 260, overflowY: 'auto' }}>
-                      {['All', ...UNIQUE_SECTORS].map(s => (
-                        <button key={s} onClick={() => { handleSector(s); if (!showAll) setShowAll(true) }}
-                          style={{ width: '100%', textAlign: 'left', padding: '8px 14px', background: s === sectorFilter ? DS.accentSoft : 'none', border: 'none', fontSize: 12, color: s === sectorFilter ? DS.accent : DS.text, fontWeight: s === sectorFilter ? 600 : 400, cursor: 'pointer' }}
-                          onMouseEnter={e => { if (s !== sectorFilter) e.currentTarget.style.background = '#f1f5f9' }}
-                          onMouseLeave={e => { if (s !== sectorFilter) e.currentTarget.style.background = 'none' }}>
-                          {s === 'All' ? 'All Sectors' : s}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Nifty 500 toggle */}
-                <button onClick={() => { setNiftyOnly(v => !v); if (!showAll) setShowAll(true); setPage(1) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', background: niftyOnly ? DS.amberSoft : DS.surface, border: `1.5px solid ${niftyOnly ? DS.amber : DS.borderMed}`, borderRadius: 8, fontSize: 11, color: niftyOnly ? DS.amber : DS.textSub, fontWeight: niftyOnly ? 700 : 400, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  Nifty 500
-                </button>
+                <button onClick={() => setShowFilterPopup(value => !value)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', background: showFilterPopup ? DS.accentSoft : '#fff', border: `1.5px solid ${showFilterPopup ? DS.accent : DS.borderMed}`, borderRadius: 8, color: showFilterPopup ? DS.accent : DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}><HiOutlineFunnel size={13} /> Filter</button>
               </div>
+              {showFilterPopup && <CompanyFilters activeGroup={filterGroup} onGroup={group => { setFilterGroup(group); setPage(1) }} onSelect={value => {
+                setShowFilterPopup(false); setPage(1)
+                if (value === 'Nifty 500') { setFilterGroup('indices'); setNiftyOnly(true); setSectorFilter('All'); setCapFilter('All') }
+                else if (value === 'All Companies') { setFilterGroup('all'); setNiftyOnly(false); setSectorFilter('All'); setCapFilter('All') }
+                else if (value.endsWith('Cap')) { setFilterGroup('marketCap'); setNiftyOnly(false); setSectorFilter('All'); setCapFilter(value) }
+                else { setFilterGroup('sectors'); setNiftyOnly(false); setCapFilter('All'); setSectorFilter(value) }
+              }} sectors={UNIQUE_SECTORS} />}
             </div>
 
-            {/* Company cards grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-              {(showAll ? pageData : ALL_COMPANIES_LIST.slice(0, 6)).map((co, i) => (
-                <CompanyCard key={`${co.name}-${i}`} name={co.name} sector={co.sector} borderRight={i % 2 === 0} />
-              ))}
-            </div>
+            <CompanyTable companies={pageData} watchlistCompanies={watchlistCompanies} onAddCompany={addCompanyToWatchlist} />
 
             {/* Footer */}
             <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafbfc', borderTop: `1px solid ${DS.border}` }}>
-              {showAll
-                ? <span style={{ fontSize: 11, color: DS.textFaint }}>
-                    {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length} companies
-                  </span>
-                : <span style={{ fontSize: 11, color: DS.textFaint }}>Showing 6 of {ALL_COMPANIES_LIST.length} companies</span>
-              }
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button onClick={() => onNavigate('chat')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg,#2563eb,#4f46e5)', border: 'none', borderRadius: 7, padding: '6px 14px', boxShadow: '0 2px 8px rgba(37,99,235,0.28)', cursor: 'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)' }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}>
-                  <BsRobot size={12} /> Analyze with AI
-                </button>
-                <button onClick={() => { setShowAll(v => !v); setSearch(''); setSectorFilter('All'); setNiftyOnly(false); setPage(1) }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: DS.accent, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 7, padding: '6px 12px', cursor: 'pointer' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(37,99,235,0.11)'}
-                  onMouseLeave={e => e.currentTarget.style.background = DS.accentSoft}>
-                  {showAll ? '↑ Show less' : 'More'}
-                </button>
-              </div>
+              <span style={{ fontSize: 11, color: DS.textFaint }}>
+                {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length} companies
+              </span>
             </div>
 
             {/* Smart Pagination — only when expanded */}
-            {showAll && totalPages > 1 && (
+            {totalPages > 1 && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '10px 16px', borderTop: `1px solid ${DS.border}`, background: '#fafbfc' }}>
                 <button disabled={safePage === 1} onClick={() => setPage(p => p - 1)}
                   style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: safePage === 1 ? 0.35 : 1, color: DS.textMuted, cursor: safePage === 1 ? 'default' : 'pointer' }}>
@@ -364,7 +387,7 @@ export default function Dashboard({ onNavigate, watchlists, recentScreenerRuns, 
               {watchlistCompanies.length === 0 ? (
                 <EmptyState icon={<HiOutlineBookmark size={22} />} text="No companies added yet. Open Watchlist to track companies." cta="Open Watchlist" onCta={() => onNavigate('compare')} />
               ) : (
-                <div>
+                <div style={{ height: watchlistCompanies.length > 3 ? 150 : undefined, overflowY: watchlistCompanies.length > 3 ? 'auto' : 'visible' }}>
                   {watchlistCompanies.map((name, i) => (
                     <div key={name}
                       style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: i < watchlistCompanies.length - 1 ? `1px solid ${DS.border}` : 'none' }}
@@ -396,7 +419,7 @@ export default function Dashboard({ onNavigate, watchlists, recentScreenerRuns, 
               {recentChatMessages.length === 0 ? (
                 <EmptyState icon={<HiOutlineChatBubbleLeftRight size={22} />} text="No queries yet. Start a conversation in AI Chat to see recent activity here." cta="Open AI Chat" onCta={() => onNavigate('chat')} />
               ) : (
-                <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ height: recentChatMessages.length > 3 ? 145 : undefined, overflowY: recentChatMessages.length > 3 ? 'auto' : 'visible', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {recentChatMessages.map((msg, i) => {
                     const IconComponents = [HiOutlineArrowTrendingUp, HiOutlineChatBubbleLeftRight, HiOutlineSparkles, HiOutlineExclamationTriangle, HiOutlineMagnifyingGlass]
                     const IconComp = IconComponents[i % IconComponents.length]
@@ -433,7 +456,7 @@ export default function Dashboard({ onNavigate, watchlists, recentScreenerRuns, 
               {recentScreenerRuns.length === 0 ? (
                 <EmptyState icon={<HiOutlineClipboardDocumentList size={22} />} text="No screener runs yet. Run a query in Screener to see activity here." cta="Open Screener" onCta={() => onNavigate('screener')} />
               ) : (
-                <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div style={{ height: recentScreenerRuns.length > 3 ? 170 : undefined, overflowY: recentScreenerRuns.length > 3 ? 'auto' : 'visible', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {recentScreenerRuns.map((s, i) => (
                     <button key={i} onClick={() => onNavigate('screener')}
                       style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', borderRadius: 8, background: '#f8fafc', border: `1px solid ${DS.border}`, textAlign: 'left', width: '100%', cursor: 'pointer' }}

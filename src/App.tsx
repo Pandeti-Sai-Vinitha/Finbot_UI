@@ -170,7 +170,11 @@ export default function App() {
 
   // SavedScreener CRUD
   const addSavedScreener = (s: SavedScreener) => setSavedScreeners(prev => [...prev, s])
-  const deleteSavedScreener = (id: number) => setSavedScreeners(prev => prev.filter(s => s.id !== id))
+  const deleteSavedScreener = (id: number) => {
+    const deleted = savedScreeners.find(s => s.id === id)
+    setSavedScreeners(prev => prev.filter(s => s.id !== id))
+    if (deleted) setRecentScreenerRuns(prev => prev.filter(run => run.query !== deleted.query))
+  }
 
   // Chat session CRUD
   const addChatSession = (): ChatSession => {
@@ -182,6 +186,9 @@ export default function App() {
   }
   const selectChatSession = (id: number) => { setActiveChatId(id); setScreen('chat') }
   const deleteChatSession = (id: number) => {
+    const deletedSession = chatSessions.find(session => session.id === id)
+    const deletedQueries = new Set((deletedSession?.messages ?? []).filter(message => message.role === 'user').map(message => message.text))
+    if (deletedQueries.size > 0) setRecentChatMessages(prev => prev.filter(message => !deletedQueries.has(message)))
     setChatSessions(prev => {
       const next = prev.filter(s => s.id !== id)
       if (next.length === 0) {

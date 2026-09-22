@@ -348,6 +348,8 @@ export default function AppShell({
           <Dashboard
             onNavigate={navigate}
             watchlists={watchlists}
+            activeWatchlistId={activeWatchlistId}
+            onUpdateWatchlist={onUpdateWatchlist}
             recentScreenerRuns={recentScreenerRuns}
             recentChatMessages={recentChatMessages}
           />
