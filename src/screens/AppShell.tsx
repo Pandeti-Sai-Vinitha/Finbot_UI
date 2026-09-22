@@ -109,15 +109,16 @@ export default function AppShell({
 
         {/* Logo row */}
         <div style={{
-          height: 52,
+          height: 58,
           display: 'flex',
           alignItems: 'center',
-          padding: collapsed ? '0 8px' : '0 9px',
-          gap: 7,
+          padding: collapsed ? '0 9px' : '0 12px',
+          gap: 8,
           borderBottom: `1px solid ${DS.border}`,
           flexShrink: 0,
           justifyContent: collapsed ? 'center' : 'flex-start',
           background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98))',
+          boxShadow: 'inset 0 -1px 0 rgba(148,163,184,0.05)',
         }}>
           <div style={{
             width: 30, height: 30, borderRadius: 10,
@@ -150,14 +151,14 @@ export default function AppShell({
             onClick={() => setCollapsed(c => !c)}
             title={collapsed ? 'Expand' : 'Collapse'}
             style={{
-              width: 22, height: 22, borderRadius: 6,
+              width: 24, height: 24, borderRadius: 7,
               background: 'transparent',
               border: `1px solid ${DS.border}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: DS.textFaint,
               flexShrink: 0,
               marginLeft: collapsed ? 'auto' : 2,
-              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.03)',
+              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.025)',
             }}
             onMouseEnter={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.color = DS.accent }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.color = DS.textFaint }}
@@ -167,7 +168,7 @@ export default function AppShell({
         </div>
 
         {/* Navigation */}
-        <nav style={{ padding: '8px 8px 8px', flexShrink: 0 }}>
+        <nav style={{ padding: '10px 8px 8px', flexShrink: 0 }}>
           {navItems.map(item => {
             const active = screen === item.id
             return (
@@ -181,21 +182,21 @@ export default function AppShell({
                   alignItems: 'center',
                   justifyContent: collapsed ? 'center' : 'flex-start',
                   gap: 8,
-                  padding: collapsed ? '8px 0' : '8px 9px',
-                  borderRadius: 9,
-                  marginBottom: 2,
+                  padding: collapsed ? '8px 0' : '9px 10px',
+                  borderRadius: 10,
+                  marginBottom: 3,
                   background: active ? 'linear-gradient(135deg, rgba(37,99,235,0.08), rgba(79,70,229,0.06))' : 'transparent',
                   border: `1px solid ${active ? DS.accentBorder : 'transparent'}`,
                   color: active ? DS.accent : DS.textSub,
                   fontSize: 12,
                   fontWeight: active ? 700 : 500,
                   letterSpacing: '-0.01em',
-                  boxShadow: active ? '0 4px 8px rgba(37, 99, 235, 0.04)' : 'none',
+                  boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 8px rgba(37, 99, 235, 0.04)' : 'none',
                 }}
                 onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(15,23,42,0.03)'; e.currentTarget.style.color = DS.text } }}
                 onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = DS.textSub } }}
               >
-                <item.icon size={16} style={{ flexShrink: 0, opacity: active ? 1 : 0.7 }} />
+                <item.icon size={16} style={{ flexShrink: 0, opacity: active ? 1 : 0.72 }} />
                 {!collapsed && item.label}
               </button>
             )
@@ -305,7 +306,7 @@ export default function AppShell({
           {/* User identity */}
           {collapsed ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #2563eb, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff' }}>
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #2563eb, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', boxShadow: '0 6px 14px rgba(37,99,235,0.18)' }}>
                 {initials}
               </div>
               <button
@@ -319,8 +320,8 @@ export default function AppShell({
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', background: 'linear-gradient(180deg, rgba(37,99,235,0.03), rgba(255,255,255,0.6))', border: `1px solid ${DS.border}`, borderRadius: 10, boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)' }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, #2563eb, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0, letterSpacing: '-0.02em' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', background: 'linear-gradient(180deg, rgba(37,99,235,0.03), rgba(255,255,255,0.72))', border: `1px solid ${DS.border}`, borderRadius: 11, boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)' }}>
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #2563eb, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0, letterSpacing: '-0.02em', boxShadow: '0 8px 18px rgba(37,99,235,0.18)' }}>
                 {initials}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>

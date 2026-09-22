@@ -78,18 +78,19 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 13px;
   line-height: 1.45;
-  background: var(--landing-bg);
+  background: #edf2f7;
   color: var(--landing-text);
   margin: 0;
   padding: 0;
-  overflow: auto;
+  overflow: hidden;
   min-height: 100vh;
+  letter-spacing: -0.01em;
 }
 
 #root {
   min-height: 100vh;
   width: 100vw;
-  background: var(--landing-bg);
+  background: #edf2f7;
 }
 
 input, textarea, select, button {
@@ -99,6 +100,20 @@ input, textarea, select, button {
 button {
   border: none;
   font-family: 'Inter', system-ui, sans-serif;
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--landing-text-faint);
 }
 
 /* Shared premium surface primitives */
@@ -169,8 +184,17 @@ button {
               opacity 0.12s ease, transform 0.12s ease;
   cursor: pointer;
 }
+button:not(:disabled):hover {
+  transform: translateY(-0.5px);
+}
 input, textarea, select {
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+  border-color: rgba(37,99,235,0.36);
 }
 
 /* ─── Animations ───────────────────────────────────────────────────── */
