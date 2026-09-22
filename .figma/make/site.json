@@ -1,0 +1,10 @@
+{
+  "description": "Create detailed wireframes effortlessly to visualize app layouts and streamline design workflows for developers and designers.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
