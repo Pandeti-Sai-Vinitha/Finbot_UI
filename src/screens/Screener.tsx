@@ -1,0 +1,473 @@
+import { useState, useRef, useEffect, useCallback } from 'react'
+import {
+  HiOutlineMagnifyingGlass, HiOutlineChevronDown, HiOutlineChevronUp,
+  HiOutlinePlus, HiOutlineXMark, HiOutlineBookmark, HiOutlineCheck,
+  HiOutlineAdjustmentsHorizontal, HiOutlineArrowRight, HiOutlineTrash,
+} from 'react-icons/hi2'
+import {
+  ANNUAL_METRIC_GROUPS, QUARTERLY_METRICS, SECTOR_COMPANIES, getAnnualData, FREQUENTLY_USED_METRICS,
+} from '../data/finData'
+import type { WatchlistItem, SavedScreener } from '../App'
+
+const DS = {
+  bg: '#f4f6f9',
+  surface: '#ffffff',
+  surfaceHover: '#f8fafc',
+  border: 'rgba(15,23,42,0.07)',
+  borderMed: 'rgba(15,23,42,0.1)',
+  text: '#0f172a',
+  textSub: '#475569',
+  textMuted: '#64748b',
+  textFaint: '#94a3b8',
+  accent: '#2563eb',
+  accentSoft: 'rgba(37,99,235,0.06)',
+  accentBorder: 'rgba(37,99,235,0.14)',
+  accentHover: 'rgba(37,99,235,0.08)',
+  green: '#16a34a', greenSoft: '#f0fdf4', greenBorder: '#bbf7d0',
+  red: '#dc2626', redSoft: '#fef2f2', redBorder: '#fecaca',
+  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.07)',
+}
+
+const ALL_METRICS = [
+  ...Object.values(ANNUAL_METRIC_GROUPS).flat(),
+  ...QUARTERLY_METRICS.filter(m => !Object.values(ANNUAL_METRIC_GROUPS).flat().includes(m)),
+]
+
+const KEY_METRICS = ['PE TTM', 'PB Ratio', 'EV/EBITDA', 'Dividend Yield (%)', 'Return on Equity (%)', 'Return on Capital Employed (%)']
+const RATIOS = ['Current Ratio', 'Quick Ratio', 'Debt to Equity', 'Interest Coverage', 'Asset Turnover']
+const PRICE = ['Current Price (Rs)', 'Market Cap (Rs Cr)', '52W High', '52W Low', '1Y Return (%)', '3Y Return (%)']
+const PREFERRED_TABS: { label: string; groups: { title: string; items: string[] }[] }[] = [
+  { label: 'Annual Results', groups: [{ title: 'P&L', items: ['Sales', 'Operating Profit', 'Net Profit', 'EPS in Rs', 'OPM %'] }, { title: 'Margins', items: ANNUAL_METRIC_GROUPS['Profit & Loss'].slice(0, 8) }, { title: 'Full P&L', items: ANNUAL_METRIC_GROUPS['Profit & Loss'] }] },
+  { label: 'Quarterly Results', groups: [{ title: 'Quarterly Metrics', items: QUARTERLY_METRICS }] },
+  { label: 'Balance Sheet', groups: [{ title: 'Balance Sheet', items: ANNUAL_METRIC_GROUPS['Balance Sheet'] }] },
+  { label: 'Cash Flow', groups: [{ title: 'Cash Flow', items: ANNUAL_METRIC_GROUPS['Cash Flow'] }] },
+  { label: 'Key Metrics', groups: [{ title: 'Key Metrics', items: KEY_METRICS }] },
+  { label: 'Ratios', groups: [{ title: 'Ratios', items: RATIOS }] },
+  { label: 'Price', groups: [{ title: 'Price', items: PRICE }] },
+]
+
+const OPERATORS = ['<', '=', '>', '(', 'AND', 'OR', ')']
+
+const ALL_COMPANIES = Array.from(new Set(Object.values(SECTOR_COMPANIES).flat()))
+
+/* Deterministic seed based on query so each unique query shows different companies */
+function querySeed(q: string): number {
+  return q.trim().split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) & 0xffff, 0)
+}
+
+function runScreener(query: string): Array<{ company: string; price: string; marketCap: string; values: Record<string, string> }> {
+  const foundMetrics = ALL_METRICS.filter(m => query.includes(m))
+  const seed = querySeed(query)
+  const offset = seed % Math.max(1, ALL_COMPANIES.length - 15)
+  const companies = [...ALL_COMPANIES.slice(offset), ...ALL_COMPANIES.slice(0, offset)].slice(0, 14)
+  return companies.map(company => {
+    const data = getAnnualData(company)
+    const yd = (data['2025'] ?? data['2024'] ?? data['2023'] ?? {}) as Record<string, unknown>
+    const fmt = (v: unknown) => (v !== undefined && v !== null && v !== '') ? String(v) : '—'
+    const values: Record<string, string> = {}
+    foundMetrics.forEach(m => { values[m] = fmt(yd[m]) })
+    const priceRaw = ((seed + company.charCodeAt(0)) % 3000) + 50
+    const capRaw = ((seed + company.charCodeAt(0) * 7) % 200000) + 1000
+    return { company, price: priceRaw.toFixed(2), marketCap: Number(capRaw).toLocaleString('en-IN'), values }
+  })
+}
+
+const EXAMPLE_QUERIES = [
+  'Sales > 1000 AND OPM % > 15',
+  'Net Profit > 500 AND EPS in Rs > 20',
+  'Operating Profit > 200 AND Total Assets > 5000',
+  'Sales > 500 AND Net Profit > 100',
+]
+
+interface Props {
+  watchlists: WatchlistItem[]
+  activeWatchlistId: number
+  onUpdateWatchlist: (id: number, patch: Partial<Omit<WatchlistItem, 'id' | 'createdAt'>>) => void
+  onNavigateToChat: () => void
+  savedScreeners: SavedScreener[]
+  onAddSavedScreener: (s: SavedScreener) => void
+  onDeleteSavedScreener: (id: number) => void
+  onRunComplete?: (query: string, count: number) => void
+}
+
+export default function Screener({
+  watchlists, activeWatchlistId, onUpdateWatchlist, onNavigateToChat,
+  savedScreeners, onAddSavedScreener, onDeleteSavedScreener, onRunComplete,
+}: Props) {
+  const [activeScreenerId, setActiveScreenerId] = useState<number | null>(null)
+  const [query, setQuery] = useState('')
+  const [metricSearch, setMetricSearch] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [preferredOpen, setPreferredOpen] = useState(true)
+  const [activeTab, setActiveTab] = useState(0)
+  const [results, setResults] = useState<ReturnType<typeof runScreener> | null>(null)
+  const [addedSet, setAddedSet] = useState<Set<string>>(new Set())
+  const [toast, setToast] = useState<string | null>(null)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const activeWatchlist = watchlists.find(w => w.id === activeWatchlistId)
+
+  const isInWatchlist = useCallback((company: string) =>
+    addedSet.has(company) || (activeWatchlist?.companies.includes(company) ?? false),
+    [addedSet, activeWatchlist])
+
+  const addToWatchlist = (company: string) => {
+    if (isInWatchlist(company)) return
+    const existing = activeWatchlist?.companies ?? []
+    onUpdateWatchlist(activeWatchlistId, { companies: [...existing, company] })
+    setAddedSet(prev => new Set(prev).add(company))
+    setToast(`${company} added to Watchlist`)
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setToast(null), 2500)
+  }
+
+  const appendToQuery = (token: string) => {
+    setQuery(q => {
+      const sep = q.length > 0 && !q.endsWith(' ') ? ' ' : ''
+      return q + sep + token + ' '
+    })
+    setMetricSearch('')
+    setSearchOpen(false)
+    setTimeout(() => textareaRef.current?.focus(), 0)
+  }
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filteredMetrics = metricSearch.trim()
+    ? ALL_METRICS.filter(m => m.toLowerCase().includes(metricSearch.toLowerCase()))
+    : []
+
+  const handlePreview = () => {
+    if (!query.trim()) return
+    const res = runScreener(query)
+    setResults(res)
+    onRunComplete?.(query, res.length)
+  }
+
+  const handleSave = () => {
+    if (!query.trim()) return
+    const res = results ?? runScreener(query)
+    const id = Date.now()
+    const name = `Screener ${savedScreeners.length + 1}`
+    const s: SavedScreener = { id, name, query, results: res }
+    onAddSavedScreener(s)
+    setActiveScreenerId(id)
+    setResults(res)
+  }
+
+  const loadScreener = (sc: SavedScreener) => {
+    setQuery(sc.query)
+    setResults(sc.results)
+    setActiveScreenerId(sc.id)
+  }
+
+  const newScreener = () => {
+    setQuery('')
+    setResults(null)
+    setActiveScreenerId(null)
+  }
+
+  const deleteScreener = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    onDeleteSavedScreener(id)
+    if (activeScreenerId === id) newScreener()
+  }
+
+  const foundMetrics = ALL_METRICS.filter(m => query.includes(m))
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: DS.bg, fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
+
+      {/* ── Saved screeners bar ── */}
+      <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, overflowX: 'auto', minHeight: 38 }}>
+        {savedScreeners.length > 0 && (
+          <span style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', flexShrink: 0, marginRight: 2 }}>SAVED</span>
+        )}
+        {savedScreeners.map(sc => {
+          const active = activeScreenerId === sc.id
+          return (
+            <div key={sc.id} style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 7, background: active ? DS.accentSoft : DS.surfaceHover, border: `1.5px solid ${active ? DS.accentBorder : DS.border}`, flexShrink: 0, overflow: 'hidden', transition: 'all 0.12s' }}>
+              <button
+                onClick={() => loadScreener(sc)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px 5px 10px', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <HiOutlineBookmark size={11} color={active ? DS.accent : DS.textFaint} />
+                <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, color: active ? DS.accent : DS.textSub, whiteSpace: 'nowrap' }}>{sc.name}</span>
+                {sc.results && (
+                  <span style={{ fontSize: 9, color: active ? DS.accent : DS.textFaint, background: active ? 'rgba(37,99,235,0.12)' : '#e2e8f0', borderRadius: 10, padding: '1px 6px' }}>{sc.results.length}</span>
+                )}
+              </button>
+              <div style={{ width: 1, height: 20, background: active ? DS.accentBorder : DS.border, flexShrink: 0 }} />
+              <button
+                onClick={e => deleteScreener(sc.id, e)}
+                title="Delete screener"
+                style={{ width: 30, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: DS.textFaint, flexShrink: 0, padding: 0 }}
+                onMouseEnter={e => { e.currentTarget.style.color = DS.red; e.currentTarget.style.background = DS.redSoft }}
+                onMouseLeave={e => { e.currentTarget.style.color = DS.textFaint; e.currentTarget.style.background = 'none' }}>
+                <HiOutlineTrash size={11} />
+              </button>
+            </div>
+          )
+        })}
+        <button onClick={newScreener}
+          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 7, background: activeScreenerId === null && savedScreeners.length > 0 ? DS.accentSoft : 'transparent', border: `1.5px solid ${activeScreenerId === null && savedScreeners.length > 0 ? DS.accentBorder : 'transparent'}`, color: activeScreenerId === null && savedScreeners.length > 0 ? DS.accent : DS.textFaint, fontSize: 12, cursor: 'pointer', flexShrink: 0, transition: 'all 0.12s' }}
+          onMouseEnter={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.borderColor = DS.accentBorder }}
+          onMouseLeave={e => { if (activeScreenerId !== null || savedScreeners.length === 0) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' } }}>
+          <HiOutlinePlus size={11} /> {savedScreeners.length === 0 ? 'New Screener' : 'New'}
+        </button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 20px' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #2563eb, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 10px rgba(37,99,235,0.22)' }}>
+            <HiOutlineAdjustmentsHorizontal size={16} color="#fff" />
+          </div>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em' }}>Screener</h1>
+            <div style={{ fontSize: 11.5, color: DS.textSub, marginTop: 1 }}>Build queries to filter companies by financial metrics</div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16, alignItems: 'start' }}>
+
+          {/* Left: query + results */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Query Builder */}
+            <div style={{ background: DS.surface, border: `1.5px solid ${DS.borderMed}`, borderRadius: 10, overflow: 'hidden', boxShadow: '0 2px 6px rgba(15,23,42,0.03)' }}>
+              <div style={{ padding: '8px 12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em' }}>QUERY BUILDER</span>
+                {query && <button onClick={() => { setQuery(''); setResults(null) }}
+                  style={{ fontSize: 10, color: DS.textFaint, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <HiOutlineXMark size={11} /> Clear
+                </button>}
+              </div>
+              <textarea
+                ref={textareaRef}
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                rows={3}
+                placeholder={`e.g., ${FREQUENTLY_USED_METRICS[0]} > 1000 AND ${FREQUENTLY_USED_METRICS[2]} > 10`}
+                style={{ width: '100%', border: 'none', outline: 'none', resize: 'none', fontSize: 12.5, color: DS.text, background: 'transparent', lineHeight: 1.6, boxSizing: 'border-box', padding: '8px 12px' }}
+              />
+              {/* Operator chips */}
+              <div style={{ padding: '6px 14px 10px', display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                {OPERATORS.map(op => (
+                  <button key={op} onClick={() => appendToQuery(op)}
+                    style={{ padding: '3px 9px', fontSize: 11, borderRadius: 6, background: '#f1f5f9', border: `1px solid ${DS.border}`, color: DS.textSub, cursor: 'pointer', fontWeight: 500 }}
+                    onMouseEnter={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.color = DS.accent }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = DS.textSub }}>
+                    {op}
+                  </button>
+                ))}
+                {/* Metric search */}
+                <div ref={searchRef} style={{ position: 'relative' }}>
+                  <button onClick={() => setSearchOpen(o => !o)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 9px', fontSize: 11, borderRadius: 8, background: searchOpen ? DS.accentSoft : '#f1f5f9', border: `1px solid ${searchOpen ? DS.accentBorder : DS.border}`, color: searchOpen ? DS.accent : DS.textSub, cursor: 'pointer', fontWeight: 500 }}>
+                    <HiOutlineMagnifyingGlass size={11} /> Add Metric
+                  </button>
+                  {searchOpen && (
+                    <div style={{ position: 'absolute', top: '110%', left: 0, zIndex: 50, background: DS.surface, border: `1px solid ${DS.accentBorder}`, borderRadius: 10, boxShadow: '0 8px 24px rgba(37,99,235,0.12)', width: 240, overflow: 'hidden' }}>
+                      <div style={{ padding: '8px 10px', borderBottom: `1px solid ${DS.border}` }}>
+                        <input autoFocus value={metricSearch} onChange={e => setMetricSearch(e.target.value)}
+                          placeholder="Search metrics…"
+                          style={{ width: '100%', border: 'none', outline: 'none', fontSize: 12, color: DS.text, background: 'transparent', boxSizing: 'border-box' }} />
+                      </div>
+                      <div style={{ maxHeight: 200, overflowY: 'auto', padding: '4px 0' }}>
+                        {(filteredMetrics.length > 0 ? filteredMetrics : FREQUENTLY_USED_METRICS).map(m => (
+                          <button key={m} onClick={() => appendToQuery(m)}
+                            style={{ width: '100%', textAlign: 'left', padding: '6px 12px', background: 'none', border: 'none', fontSize: 12, color: DS.text, cursor: 'pointer' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.color = DS.accent }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = DS.text }}>
+                            {m}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={handlePreview} disabled={!query.trim()}
+                style={{ flex: 1, padding: '10px', border: 'none', borderRadius: 8, background: query.trim() ? DS.accent : '#e2e8f0', color: query.trim() ? '#fff' : '#94a3b8', fontSize: 13, fontWeight: 700, cursor: query.trim() ? 'pointer' : 'not-allowed', boxShadow: query.trim() ? '0 1px 3px rgba(37,99,235,0.25)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.15s' }}>
+                <HiOutlineAdjustmentsHorizontal size={14} /> Run Screener
+              </button>
+              <button onClick={handleSave} disabled={!query.trim()}
+                style={{ padding: '10px 18px', border: `1.5px solid ${query.trim() ? DS.accentBorder : DS.border}`, borderRadius: 8, background: query.trim() ? DS.accentSoft : DS.surfaceHover, color: query.trim() ? DS.accent : DS.textFaint, fontSize: 13, fontWeight: 600, cursor: query.trim() ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.15s' }}>
+                <HiOutlineBookmark size={14} /> Save
+              </button>
+            </div>
+
+            {/* Results */}
+            {results === null ? (
+              /* Empty state */
+              <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '36px 24px', textAlign: 'center', boxShadow: '0 2px 8px rgba(37,99,235,0.04)' }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: DS.accentSoft, border: `1.5px solid ${DS.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <HiOutlineAdjustmentsHorizontal size={22} color={DS.accent} />
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: DS.text, marginBottom: 6 }}>Build your first screener</div>
+                <div style={{ fontSize: 12, color: DS.textSub, marginBottom: 18, lineHeight: 1.6 }}>Type a query or click an example below to filter companies by any financial metric</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center' }}>
+                  {EXAMPLE_QUERIES.map(q => (
+                    <button key={q} onClick={() => { setQuery(q); setTimeout(handlePreview, 50) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', borderRadius: 6, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, color: DS.accent, fontSize: 11, cursor: 'pointer', fontWeight: 500, transition: 'all 0.12s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = DS.accent; e.currentTarget.style.color = '#fff' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.color = DS.accent }}>
+                      {q} <HiOutlineArrowRight size={10} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              /* Results table */
+              <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 12px rgba(37,99,235,0.06)' }}>
+                <div style={{ padding: '12px 16px', borderBottom: `1px solid ${DS.border}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: DS.text }}>{results.length} companies matched</span>
+                    <button onClick={() => setResults(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: DS.textFaint, fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <HiOutlineXMark size={12} /> Clear
+                    </button>
+                  </div>
+                  <div style={{ fontSize: 11, color: DS.textSub, background: DS.surfaceHover, border: `1px solid ${DS.border}`, borderRadius: 6, padding: '6px 10px', marginBottom: foundMetrics.length > 0 ? 6 : 0 }}>
+                    <span style={{ color: DS.textFaint }}>Query: </span>{query}
+                  </div>
+                  {foundMetrics.length > 0 && (
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {foundMetrics.map(m => <span key={m} style={{ fontSize: 9, padding: '2px 7px', borderRadius: 6, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, color: DS.accent, fontWeight: 600 }}>{m}</span>)}
+                    </div>
+                  )}
+                </div>
+                <div style={{ overflowX: 'auto', maxHeight: 380, overflowY: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: DS.surfaceHover }}>
+                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', whiteSpace: 'nowrap', background: DS.surfaceHover }}>COMPANY</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', background: DS.surfaceHover }}>PRICE</th>
+                        <th style={{ padding: '10px 12px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', background: DS.surfaceHover }}>MKT CAP</th>
+                        {foundMetrics.map(m => <th key={m} style={{ padding: '10px 12px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', whiteSpace: 'nowrap', background: DS.surfaceHover }}>{m.toUpperCase()}</th>)}
+                        <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', background: DS.surfaceHover }}>WATCHLIST</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results.map((row, i) => {
+                        const inWL = isInWatchlist(row.company)
+                        return (
+                          <tr key={row.company} style={{ background: i % 2 === 0 ? '#fff' : '#fafbff', borderTop: `1px solid ${DS.border}` }}
+                            onMouseEnter={e => e.currentTarget.style.background = DS.surfaceHover}
+                            onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#fafbff'}>
+                            <td style={{ padding: '10px 16px', fontWeight: 600, color: DS.text, whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: `1px solid ${DS.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: DS.accent, flexShrink: 0 }}>
+                                  {row.company.slice(0, 2).toUpperCase()}
+                                </div>
+                                {row.company}
+                              </div>
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'right', color: DS.text, fontVariantNumeric: 'tabular-nums' }}>₹{row.price}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'right', color: DS.textSub, fontSize: 11, fontVariantNumeric: 'tabular-nums' }}>₹{row.marketCap} Cr</td>
+                            {foundMetrics.map(m => <td key={m} style={{ padding: '10px 12px', textAlign: 'right', color: row.values[m] === '—' ? DS.textFaint : DS.text, fontVariantNumeric: 'tabular-nums' }}>{row.values[m]}</td>)}
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              {inWL ? (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, color: DS.green, background: DS.greenSoft, border: `1px solid ${DS.greenBorder}`, borderRadius: 6, padding: '3px 8px', fontWeight: 600 }}>
+                                  <HiOutlineCheck size={10} /> Added
+                                </span>
+                              ) : (
+                                <button onClick={() => addToWatchlist(row.company)}
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, color: DS.accent, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontWeight: 600, transition: 'all 0.12s' }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = DS.accent; e.currentTarget.style.color = '#fff' }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.color = DS.accent }}>
+                                  <HiOutlinePlus size={10} /> Add
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: metric picker */}
+          <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(37,99,235,0.04)', flexShrink: 0 }}>
+            <div style={{ padding: '12px 14px', borderBottom: `1px solid ${DS.border}` }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 8 }}>FREQUENTLY USED</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {FREQUENTLY_USED_METRICS.map(m => (
+                  <button key={m} onClick={() => appendToQuery(m)}
+                    style={{ padding: '4px 9px', fontSize: 10, borderRadius: 6, background: query.includes(m) ? DS.accent : DS.accentSoft, border: `1px solid ${query.includes(m) ? DS.accent : DS.accentBorder}`, color: query.includes(m) ? '#fff' : DS.accent, cursor: 'pointer', fontWeight: 600, transition: 'all 0.12s' }}>
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tabs + metric accordion */}
+            <div>
+              <button onClick={() => setPreferredOpen(o => !o)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'none', border: 'none', borderBottom: preferredOpen ? `1px solid ${DS.border}` : 'none', cursor: 'pointer', color: DS.textSub, fontSize: 11, fontWeight: 600 }}>
+                <span style={{ fontSize: 9, letterSpacing: '0.07em', color: DS.textFaint, fontWeight: 700 }}>METRIC CATEGORIES</span>
+                {preferredOpen ? <HiOutlineChevronUp size={12} /> : <HiOutlineChevronDown size={12} />}
+              </button>
+              {preferredOpen && (
+                <div>
+                  {/* Tab bar */}
+                  <div style={{ display: 'flex', overflowX: 'auto', borderBottom: `1px solid ${DS.border}` }}>
+                    {PREFERRED_TABS.map((tab, i) => (
+                      <button key={tab.label} onClick={() => setActiveTab(i)}
+                        style={{ padding: '7px 11px', background: 'none', border: 'none', borderBottom: activeTab === i ? `2px solid ${DS.accent}` : '2px solid transparent', color: activeTab === i ? DS.accent : DS.textSub, fontSize: 10, fontWeight: activeTab === i ? 700 : 400, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, transition: 'all 0.12s' }}>
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Groups */}
+                  <div style={{ maxHeight: 340, overflowY: 'auto', padding: '8px 0' }}>
+                    {PREFERRED_TABS[activeTab]?.groups.map(grp => (
+                      <div key={grp.title} style={{ padding: '4px 14px 8px' }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 5 }}>{grp.title.toUpperCase()}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {grp.items.map(item => {
+                            const inQuery = query.includes(item)
+                            return (
+                              <button key={item} onClick={() => appendToQuery(item)}
+                                style={{ padding: '3px 8px', fontSize: 10, borderRadius: 6, background: inQuery ? DS.accentSoft : DS.surfaceHover, border: `1px solid ${inQuery ? DS.accentBorder : DS.border}`, color: inQuery ? DS.accent : DS.textSub, cursor: 'pointer', fontWeight: inQuery ? 600 : 400, transition: 'all 0.1s' }}
+                                onMouseEnter={e => { if (!inQuery) { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.color = DS.accent } }}
+                                onMouseLeave={e => { if (!inQuery) { e.currentTarget.style.background = DS.surfaceHover; e.currentTarget.style.color = DS.textSub } }}>
+                                {item}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1e293b', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 12, fontWeight: 600, boxShadow: '0 4px 20px rgba(0,0,0,0.2)', zIndex: 100, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'none' }}>
+          <HiOutlineBookmark size={13} color="#60a5fa" /> {toast}
+        </div>
+      )}
+    </div>
+  )
+}
