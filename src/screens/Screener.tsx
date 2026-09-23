@@ -13,19 +13,23 @@ const DS = {
   bg: '#f4f6f9',
   surface: '#ffffff',
   surfaceHover: '#f8fafc',
-  border: 'rgba(15,23,42,0.07)',
-  borderMed: 'rgba(15,23,42,0.1)',
+  border: 'rgba(15,23,42,0.08)',
+  borderMed: 'rgba(15,23,42,0.12)',
   text: '#0f172a',
   textSub: '#475569',
   textMuted: '#64748b',
   textFaint: '#94a3b8',
   accent: '#2563eb',
-  accentSoft: 'rgba(37,99,235,0.06)',
-  accentBorder: 'rgba(37,99,235,0.14)',
-  accentHover: 'rgba(37,99,235,0.08)',
+  accentDark: '#1d4ed8',
+  accentTwo: '#4f46e5',
+  accentSoft: 'rgba(37,99,235,0.08)',
+  accentBorder: 'rgba(37,99,235,0.18)',
+  accentHover: 'rgba(37,99,235,0.12)',
   green: '#16a34a', greenSoft: '#f0fdf4', greenBorder: '#bbf7d0',
   red: '#dc2626', redSoft: '#fef2f2', redBorder: '#fecaca',
   purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.07)',
+  shadow: 'none',
+  radius: 10,
 }
 
 const ALL_METRICS = [
@@ -184,7 +188,7 @@ export default function Screener({
   const foundMetrics = ALL_METRICS.filter(m => query.includes(m))
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: DS.bg, fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: DS.bg, fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
 
       {/* ── Saved screeners bar ── */}
       <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, overflowX: 'auto', minHeight: 38 }}>
@@ -194,7 +198,7 @@ export default function Screener({
         {savedScreeners.map(sc => {
           const active = activeScreenerId === sc.id
           return (
-            <div key={sc.id} style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 7, background: active ? DS.accentSoft : DS.surfaceHover, border: `1.5px solid ${active ? DS.accentBorder : DS.border}`, flexShrink: 0, overflow: 'hidden', transition: 'all 0.12s' }}>
+            <div key={sc.id} style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 7, background: active ? DS.accentSoft : DS.surfaceHover, border: `1px solid ${active ? DS.accentBorder : DS.border}`, flexShrink: 0, overflow: 'hidden', transition: 'all 0.12s' }}>
               <button
                 onClick={() => loadScreener(sc)}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px 5px 10px', background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -217,33 +221,33 @@ export default function Screener({
           )
         })}
         <button onClick={newScreener}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 7, background: activeScreenerId === null && savedScreeners.length > 0 ? DS.accentSoft : 'transparent', border: `1.5px solid ${activeScreenerId === null && savedScreeners.length > 0 ? DS.accentBorder : 'transparent'}`, color: activeScreenerId === null && savedScreeners.length > 0 ? DS.accent : DS.textFaint, fontSize: 12, cursor: 'pointer', flexShrink: 0, transition: 'all 0.12s' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 7, background: activeScreenerId === null && savedScreeners.length > 0 ? DS.accentSoft : 'transparent', border: `1px solid ${activeScreenerId === null && savedScreeners.length > 0 ? DS.accentBorder : 'transparent'}`, color: activeScreenerId === null && savedScreeners.length > 0 ? DS.accent : DS.textFaint, fontSize: 12, cursor: 'pointer', flexShrink: 0, transition: 'all 0.12s' }}
           onMouseEnter={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.borderColor = DS.accentBorder }}
           onMouseLeave={e => { if (activeScreenerId !== null || savedScreeners.length === 0) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' } }}>
           <HiOutlinePlus size={11} /> {savedScreeners.length === 0 ? 'New Screener' : 'New'}
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 20px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '12px 16px 20px' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #2563eb, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 10px rgba(37,99,235,0.22)' }}>
+          <div style={{ width: 32, height: 32, borderRadius: DS.radius, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <HiOutlineAdjustmentsHorizontal size={16} color="#fff" />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em' }}>Screener</h1>
+            <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em', fontFamily: 'Instrument Sans, sans-serif' }}>Screener</h1>
             <div style={{ fontSize: 11.5, color: DS.textSub, marginTop: 1 }}>Build queries to filter companies by financial metrics</div>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16, alignItems: 'start' }}>
+        <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16 }}>
 
           {/* Left: query + results */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0 }}>
 
             {/* Query Builder */}
-            <div style={{ background: DS.surface, border: `1.5px solid ${DS.borderMed}`, borderRadius: 10, overflow: 'hidden', boxShadow: '0 2px 6px rgba(15,23,42,0.03)' }}>
+            <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: DS.radius, overflow: 'hidden' }}>
               <div style={{ padding: '8px 12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em' }}>QUERY BUILDER</span>
                 {query && <button onClick={() => { setQuery(''); setResults(null) }}
@@ -259,8 +263,8 @@ export default function Screener({
                 placeholder={`e.g., ${FREQUENTLY_USED_METRICS[0]} > 1000 AND ${FREQUENTLY_USED_METRICS[2]} > 10`}
                 style={{ width: '100%', border: 'none', outline: 'none', resize: 'none', fontSize: 12.5, color: DS.text, background: 'transparent', lineHeight: 1.6, boxSizing: 'border-box', padding: '8px 12px' }}
               />
-              {/* Operator chips */}
-              <div style={{ padding: '6px 14px 10px', display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* Operator chips + compact actions */}
+              <div style={{ padding: '6px 12px 8px', display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
                 {OPERATORS.map(op => (
                   <button key={op} onClick={() => appendToQuery(op)}
                     style={{ padding: '3px 9px', fontSize: 11, borderRadius: 6, background: '#f1f5f9', border: `1px solid ${DS.border}`, color: DS.textSub, cursor: 'pointer', fontWeight: 500 }}
@@ -295,26 +299,24 @@ export default function Screener({
                     </div>
                   )}
                 </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <button onClick={handlePreview} disabled={!query.trim()}
+                    style={{ padding: '4px 10px', border: query.trim() ? `1px solid ${DS.accent}` : `1px solid ${DS.border}`, borderRadius: 6, background: query.trim() ? DS.accent : DS.surfaceHover, color: query.trim() ? '#fff' : DS.textFaint, fontSize: 11, fontWeight: 600, cursor: query.trim() ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 4, minHeight: 26 }}>
+                    <HiOutlineAdjustmentsHorizontal size={12} /> Run
+                  </button>
+                  <button onClick={handleSave} disabled={!query.trim()}
+                    style={{ padding: '4px 10px', border: `1px solid ${query.trim() ? DS.accentBorder : DS.border}`, borderRadius: 6, background: query.trim() ? DS.accentSoft : DS.surfaceHover, color: query.trim() ? DS.accent : DS.textFaint, fontSize: 11, fontWeight: 600, cursor: query.trim() ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 4, minHeight: 26 }}>
+                    <HiOutlineBookmark size={12} /> Save
+                  </button>
+                </div>
               </div>
-            </div>
-
-            {/* Action buttons */}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={handlePreview} disabled={!query.trim()}
-                style={{ flex: 1, padding: '10px', border: 'none', borderRadius: 8, background: query.trim() ? DS.accent : '#e2e8f0', color: query.trim() ? '#fff' : '#94a3b8', fontSize: 13, fontWeight: 700, cursor: query.trim() ? 'pointer' : 'not-allowed', boxShadow: query.trim() ? '0 1px 3px rgba(37,99,235,0.25)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.15s' }}>
-                <HiOutlineAdjustmentsHorizontal size={14} /> Run Screener
-              </button>
-              <button onClick={handleSave} disabled={!query.trim()}
-                style={{ padding: '10px 18px', border: `1.5px solid ${query.trim() ? DS.accentBorder : DS.border}`, borderRadius: 8, background: query.trim() ? DS.accentSoft : DS.surfaceHover, color: query.trim() ? DS.accent : DS.textFaint, fontSize: 13, fontWeight: 600, cursor: query.trim() ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.15s' }}>
-                <HiOutlineBookmark size={14} /> Save
-              </button>
             </div>
 
             {/* Results */}
             {results === null ? (
               /* Empty state */
-              <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '36px 24px', textAlign: 'center', boxShadow: '0 2px 8px rgba(37,99,235,0.04)' }}>
-                <div style={{ width: 48, height: 48, borderRadius: 14, background: DS.accentSoft, border: `1.5px solid ${DS.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+              <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: DS.radius, padding: '32px 24px', textAlign: 'center' }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
                   <HiOutlineAdjustmentsHorizontal size={22} color={DS.accent} />
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: DS.text, marginBottom: 6 }}>Build your first screener</div>
@@ -332,7 +334,7 @@ export default function Screener({
               </div>
             ) : (
               /* Results table */
-              <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 12px rgba(37,99,235,0.06)' }}>
+              <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, overflow: 'hidden', boxShadow: 'none' }}>
                 <div style={{ padding: '12px 16px', borderBottom: `1px solid ${DS.border}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: DS.text }}>{results.length} companies matched</span>
@@ -349,7 +351,7 @@ export default function Screener({
                     </div>
                   )}
                 </div>
-                <div style={{ overflowX: 'auto', maxHeight: 380, overflowY: 'auto' }}>
+                <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: DS.surfaceHover }}>
@@ -403,7 +405,7 @@ export default function Screener({
           </div>
 
           {/* Right: metric picker */}
-          <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(37,99,235,0.04)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, overflow: 'hidden', boxShadow: 'none' }}>
             <div style={{ padding: '12px 14px', borderBottom: `1px solid ${DS.border}` }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 8 }}>FREQUENTLY USED</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -417,14 +419,14 @@ export default function Screener({
             </div>
 
             {/* Tabs + metric accordion */}
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
               <button onClick={() => setPreferredOpen(o => !o)}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'none', border: 'none', borderBottom: preferredOpen ? `1px solid ${DS.border}` : 'none', cursor: 'pointer', color: DS.textSub, fontSize: 11, fontWeight: 600 }}>
                 <span style={{ fontSize: 9, letterSpacing: '0.07em', color: DS.textFaint, fontWeight: 700 }}>METRIC CATEGORIES</span>
                 {preferredOpen ? <HiOutlineChevronUp size={12} /> : <HiOutlineChevronDown size={12} />}
               </button>
               {preferredOpen && (
-                <div>
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
                   {/* Tab bar */}
                   <div style={{ display: 'flex', overflowX: 'auto', borderBottom: `1px solid ${DS.border}` }}>
                     {PREFERRED_TABS.map((tab, i) => (
@@ -435,7 +437,7 @@ export default function Screener({
                     ))}
                   </div>
                   {/* Groups */}
-                  <div style={{ maxHeight: 340, overflowY: 'auto', padding: '8px 0' }}>
+                  <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 0' }}>
                     {PREFERRED_TABS[activeTab]?.groups.map(grp => (
                       <div key={grp.title} style={{ padding: '4px 14px 8px' }}>
                         <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 5 }}>{grp.title.toUpperCase()}</div>

@@ -17,19 +17,23 @@ const DS = {
   overlay: 'rgba(15,23,42,0.45)',
   border: 'rgba(15,23,42,0.08)',
   borderMed: 'rgba(15,23,42,0.12)',
-  borderStrong: 'rgba(15,23,42,0.18)',
+  borderStrong: 'rgba(15,23,42,0.16)',
   text: '#0f172a',
   textSub: '#475569',
   textMuted: '#64748b',
   textFaint: '#94a3b8',
   accent: '#2563eb',
-  accentSoft: 'rgba(37,99,235,0.07)',
+  accentDark: '#1d4ed8',
+  accentTwo: '#4f46e5',
+  accentSoft: 'rgba(37,99,235,0.08)',
   accentBorder: 'rgba(37,99,235,0.18)',
-  accentHover: 'rgba(37,99,235,0.11)',
+  accentHover: 'rgba(37,99,235,0.12)',
   green: '#16a34a', greenSoft: '#f0fdf4', greenBorder: '#bbf7d0',
   red: '#dc2626', redSoft: '#fef2f2', redBorder: '#fecaca',
   amber: '#d97706', amberSoft: 'rgba(217,119,6,0.08)',
   purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.07)', purpleBorder: 'rgba(124,58,237,0.18)',
+  shadow: 'none',
+  radius: 10,
 }
 
 type CompareMode = 'choose' | 'existing' | 'manual' | 'result'
@@ -137,7 +141,7 @@ export default function CompareModal({ baseConfig, allConfigs, onClose, onSaveAs
 
         {/* Header */}
         <div style={{ padding: '16px 22px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #2563eb, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <HiOutlineArrowsRightLeft size={15} color="#fff" />
           </div>
           <div>
@@ -365,11 +369,11 @@ function ManualBuilder({ manual, setManual, step, setStep, expandedGroups, setEx
                 const sel = manual.sectors.includes(s)
                 return (
                   <button key={s} onClick={() => toggleSector(s)}
-                    style={{ textAlign: 'left', padding: '7px 10px', borderRadius: 6, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontSize: 11, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                    style={{ textAlign: 'left', padding: '7px 10px', borderRadius: 6, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontSize: 11, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                     onMouseEnter={e => { if (!sel) e.currentTarget.style.background = DS.surfaceHover }}
                     onMouseLeave={e => { if (!sel) e.currentTarget.style.background = DS.surface }}
                   >
-                    <div style={{ width: 13, height: 13, borderRadius: 3, flexShrink: 0, border: `1.5px solid ${sel ? DS.accent : 'rgba(37,99,235,0.2)'}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 13, height: 13, borderRadius: 3, flexShrink: 0, border: `1px solid ${sel ? DS.accent : 'rgba(37,99,235,0.2)'}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {sel && <HiOutlineCheck size={8} color="#fff" />}
                     </div>
                     <span style={{ fontSize: 10, lineHeight: 1.3 }}>{s}</span>
@@ -406,11 +410,11 @@ function ManualBuilder({ manual, setManual, step, setStep, expandedGroups, setEx
                       const sel = manual.companies.includes(co)
                       return (
                         <button key={co} onClick={() => toggleCompany(co)}
-                          style={{ textAlign: 'left', padding: '7px 10px', borderRadius: 6, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontSize: 11, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                          style={{ textAlign: 'left', padding: '7px 10px', borderRadius: 6, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontSize: 11, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                           onMouseEnter={e => { if (!sel) e.currentTarget.style.background = DS.surfaceHover }}
                           onMouseLeave={e => { if (!sel) e.currentTarget.style.background = DS.surface }}
                         >
-                          <div style={{ width: 13, height: 13, borderRadius: 3, flexShrink: 0, border: `1.5px solid ${sel ? DS.accent : 'rgba(37,99,235,0.2)'}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: 13, height: 13, borderRadius: 3, flexShrink: 0, border: `1px solid ${sel ? DS.accent : 'rgba(37,99,235,0.2)'}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {sel && <HiOutlineCheck size={8} color="#fff" />}
                           </div>
                           {co}
@@ -503,7 +507,7 @@ function ManualBuilder({ manual, setManual, step, setStep, expandedGroups, setEx
                             const sel = manual.metrics.includes(m)
                             return (
                               <button key={m} onClick={() => toggleMetric(m)}
-                                style={{ padding: '5px 10px', borderRadius: 6, fontSize: 11, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                style={{ padding: '5px 10px', borderRadius: 6, fontSize: 11, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
                                 {sel && <HiOutlineCheck size={9} />}{m}
                               </button>
                             )
@@ -520,7 +524,7 @@ function ManualBuilder({ manual, setManual, step, setStep, expandedGroups, setEx
                   const sel = manual.metrics.includes(m)
                   return (
                     <button key={m} onClick={() => toggleMetric(m)}
-                      style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
+                      style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : DS.textSub, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
                       {sel && <HiOutlineCheck size={9} />}{m}
                     </button>
                   )
@@ -549,7 +553,7 @@ function ManualBuilder({ manual, setManual, step, setStep, expandedGroups, setEx
                 <div style={{ display: 'flex', gap: 7 }}>
                   {(['concise', 'detailed', 'analytical'] as const).map(st => (
                     <button key={st} onClick={() => setManual(f => ({ ...f, responseStyle: st }))}
-                      style={{ flex: 1, padding: '8px', borderRadius: 8, border: `1.5px solid ${manual.responseStyle === st ? DS.accentBorder : DS.border}`, background: manual.responseStyle === st ? DS.accentSoft : 'transparent', color: manual.responseStyle === st ? DS.accent : DS.textSub, fontSize: 12, fontWeight: manual.responseStyle === st ? 600 : 400, cursor: 'pointer', textTransform: 'capitalize' }}>
+                      style={{ flex: 1, padding: '8px', borderRadius: 8, border: `1px solid ${manual.responseStyle === st ? DS.accentBorder : DS.border}`, background: manual.responseStyle === st ? DS.accentSoft : 'transparent', color: manual.responseStyle === st ? DS.accent : DS.textSub, fontSize: 12, fontWeight: manual.responseStyle === st ? 600 : 400, cursor: 'pointer', textTransform: 'capitalize' }}>
                       {st}
                     </button>
                   ))}
@@ -583,7 +587,7 @@ function ManualBuilder({ manual, setManual, step, setStep, expandedGroups, setEx
           </button>
         ) : (
           <button onClick={onSubmit}
-            style={{ flex: 1, padding: '10px', border: 'none', borderRadius: 8, background: DS.accent, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(37,99,235,0.25)' }}>
+            style={{ flex: 1, padding: '10px', border: 'none', borderRadius: 8, background: DS.accent, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,0.18)' }}>
             Generate Comparison →
           </button>
         )}
@@ -661,7 +665,7 @@ function ComparisonResult({ base, compare, compareLabel, onSaveAsConfig, onExpor
           <ActionBtn icon={<HiOutlineArrowPath size={12} />} label="Reset" onClick={onReset} />
           <ActionBtn icon={<HiOutlineArrowDownTray size={12} />} label="Export" onClick={onExport} />
           <button onClick={onSaveAsConfig}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', background: DS.accent, border: 'none', borderRadius: 8, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(37,99,235,0.25)' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', background: DS.accent, border: '1px solid rgba(37,99,235,0.12)', borderRadius: DS.radius, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', boxShadow: '0 1px 3px rgba(37,99,235,0.25)' }}>
             <HiOutlineBookmark size={12} /> Save as Config
           </button>
         </div>

@@ -106,8 +106,8 @@ const DS = {
   surface: '#ffffff',
   surfaceHover: '#f8fafc',
   overlay: 'rgba(15,23,42,0.45)',
-  border: 'rgba(15,23,42,0.07)',
-  borderMed: 'rgba(15,23,42,0.1)',
+  border: 'rgba(15,23,42,0.08)',
+  borderMed: 'rgba(15,23,42,0.12)',
   borderStrong: 'rgba(15,23,42,0.16)',
   text: '#0f172a',
   textSub: '#475569',
@@ -115,13 +115,16 @@ const DS = {
   textFaint: '#94a3b8',
   accent: '#2563eb',
   accentDark: '#1d4ed8',
-  accentSoft: 'rgba(37,99,235,0.06)',
-  accentBorder: 'rgba(37,99,235,0.14)',
-  accentHover: 'rgba(37,99,235,0.08)',
+  accentTwo: '#4f46e5',
+  accentSoft: 'rgba(37,99,235,0.08)',
+  accentBorder: 'rgba(37,99,235,0.18)',
+  accentHover: 'rgba(37,99,235,0.12)',
   green: '#16a34a', greenSoft: '#f0fdf4', greenBorder: '#bbf7d0',
   red: '#dc2626', redSoft: '#fef2f2', redBorder: '#fecaca',
   amber: '#d97706', amberSoft: 'rgba(217,119,6,0.08)',
   purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.07)', purpleBorder: 'rgba(124,58,237,0.18)',
+  shadow: 'none',
+  radius: 10,
 }
 
 let _msgId = 0
@@ -494,7 +497,7 @@ function ThinkingBubble({ phase }: { phase: number }) {
       </div>
       {THINK_STEPS.slice(0, phase + 1).map((step, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 5 }}>
-          <div style={{ width: 14, height: 14, borderRadius: '50%', background: i < phase ? DS.green : DS.accentSoft, border: `1.5px solid ${i < phase ? DS.green : DS.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 14, height: 14, borderRadius: '50%', background: i < phase ? DS.green : DS.accentSoft, border: `1px solid ${i < phase ? DS.green : DS.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {i < phase ? <HiOutlineCheck size={8} color={DS.green} /> : <div style={{ width: 4, height: 4, borderRadius: '50%', background: DS.accent }} />}
           </div>
           <span style={{ fontSize: 11, color: i < phase ? DS.textSub : DS.text }}>{step}</span>
@@ -592,8 +595,8 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
   }
 
   const Chip = ({ label, sel, onClick }: { label: string; sel: boolean; onClick: () => void }) => (
-    <button onClick={onClick} style={{ textAlign: 'left', padding: '5px 9px', borderRadius: 6, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontSize: 10, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-      <div style={{ width: 11, height: 11, borderRadius: 3, border: `1.5px solid ${sel ? DS.accent : 'rgba(100,116,139,0.3)'}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <button onClick={onClick} style={{ textAlign: 'left', padding: '5px 9px', borderRadius: 6, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontSize: 10, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+      <div style={{ width: 11, height: 11, borderRadius: 3, border: `1px solid ${sel ? DS.accent : 'rgba(100,116,139,0.3)'}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         {sel && <HiOutlineCheck size={7} color="#fff" />}
       </div>
       {label}
@@ -609,7 +612,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
         {/* Header */}
         <div style={{ padding: '14px 18px 0', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <HiOutlineCog6Tooth size={14} color="#fff" />
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: DS.text }}>Personalize FinBot</div>
@@ -649,7 +652,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                   cfg.responseStyle,
                 ].filter(Boolean).join(' · ')
                 return (
-                  <div key={cfg.id} style={{ border: `1.5px solid ${isActive ? DS.accentBorder : DS.border}`, borderRadius: 10, padding: '10px 12px', background: isActive ? 'rgba(37,99,235,0.03)' : DS.surface, boxShadow: isActive ? '0 2px 8px rgba(37,99,235,0.04)' : 'none' }}>
+                  <div key={cfg.id} style={{ border: `1px solid ${isActive ? DS.accentBorder : DS.border}`, borderRadius: 10, padding: '10px 12px', background: isActive ? 'rgba(37,99,235,0.03)' : DS.surface, boxShadow: isActive ? '0 2px 8px rgba(37,99,235,0.04)' : 'none' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
                       {isDefault && <RiSparklingLine size={11} color={isActive ? DS.accent : DS.textFaint} style={{ flexShrink: 0 }} />}
                       <span style={{ fontWeight: 700, fontSize: 13, color: isActive ? DS.accent : DS.text, flex: 1 }}>{cfg.name}</span>
@@ -687,7 +690,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                     ) : (
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => startEdit(cfg)} style={{ flex: 1, padding: '6px', borderRadius: 8, border: `1px solid ${DS.accentBorder}`, background: 'transparent', color: DS.accent, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Edit</button>
-                        {!isActive && <button onClick={() => onActivate(cfg.id)} style={{ flex: 1, padding: '6px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Activate</button>}
+                        {!isActive && <button onClick={() => onActivate(cfg.id)} style={{ flex: 1, padding: '6px', borderRadius: 8, border: 'none', background: DS.accent, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Activate</button>}
                         {isActive && <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: DS.green, background: DS.greenSoft, border: `1px solid ${DS.greenBorder}`, borderRadius: 8, padding: '6px' }}><HiOutlineCheck size={12} /> Active</div>}
                         {!isDefault && <button onClick={() => setDeleteConfirmId(cfg.id)} style={{ width: 32, borderRadius: 8, border: `1px solid ${DS.border}`, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textFaint }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor = DS.redBorder; e.currentTarget.style.background = DS.redSoft; e.currentTarget.style.color = DS.red }}
@@ -801,7 +804,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                         <div style={{ padding: '6px 10px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                           {vis.map(m => {
                             const sel = form.metrics.includes(m)
-                            return <button key={m} onClick={() => toggleM(m)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: 10, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>{sel && <HiOutlineCheck size={7} />}{m}</button>
+                            return <button key={m} onClick={() => toggleM(m)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: 10, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>{sel && <HiOutlineCheck size={7} />}{m}</button>
                           })}
                         </div>
                       )}
@@ -816,7 +819,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
               <div style={{ display: 'flex', gap: 6, marginBottom: 2 }}>
                 {(['concise', 'detailed', 'analytical'] as const).map(st => (
                   <button key={st} onClick={() => setForm(f => ({ ...f, responseStyle: st }))}
-                    style={{ flex: 1, padding: '6px', borderRadius: 8, border: `1.5px solid ${form.responseStyle === st ? DS.accentBorder : DS.border}`, background: form.responseStyle === st ? DS.accentSoft : 'transparent', color: form.responseStyle === st ? DS.accent : DS.textSub, fontSize: 11, fontWeight: form.responseStyle === st ? 600 : 400, cursor: 'pointer', textTransform: 'capitalize' }}>{st}</button>
+                    style={{ flex: 1, padding: '6px', borderRadius: 8, border: `1px solid ${form.responseStyle === st ? DS.accentBorder : DS.border}`, background: form.responseStyle === st ? DS.accentSoft : 'transparent', color: form.responseStyle === st ? DS.accent : DS.textSub, fontSize: 11, fontWeight: form.responseStyle === st ? 600 : 400, cursor: 'pointer', textTransform: 'capitalize' }}>{st}</button>
                 ))}
               </div>
             </div>
@@ -858,7 +861,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                 <div style={{ background: DS.surfaceHover, border: `1px dashed ${DS.accentBorder}`, borderRadius: 10, padding: '18px 16px', textAlign: 'center', marginBottom: 12 }}>
                   <div style={{ fontSize: 12, color: DS.textSub, marginBottom: 10, lineHeight: 1.6 }}>No saved screeners yet. Run a screener and save it first, then come back here to create a personalization from it.</div>
                   <button onClick={onNavigateToScreener}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px rgba(37,99,235,0.25)' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: 'none', background: DS.accent, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px rgba(37,99,235,0.25)' }}>
                     <HiOutlineSparkles size={13} /> Go to Screener
                   </button>
                 </div>
@@ -868,7 +871,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                     const isSel = selectedScreenerId === sc.id
                     return (
                       <button key={sc.id} onClick={() => selectScreener(isSel ? null : sc)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${isSel ? DS.accentBorder : DS.border}`, background: isSel ? DS.accentSoft : DS.surface, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, border: `1px solid ${isSel ? DS.accentBorder : DS.border}`, background: isSel ? DS.accentSoft : DS.surface, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}>
                         <div style={{ width: 32, height: 32, borderRadius: 8, background: isSel ? DS.accent : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <HiOutlineAdjustmentsHorizontal size={15} color={isSel ? '#fff' : DS.textFaint} />
                         </div>
@@ -952,7 +955,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                               <div style={{ padding: '6px 10px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                 {vis.map(m => {
                                   const sel = createMetrics.includes(m)
-                                  return <button key={m} onClick={() => toggleCreateM(m)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: 10, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>{sel && <HiOutlineCheck size={7} />}{m}</button>
+                                  return <button key={m} onClick={() => toggleCreateM(m)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: 10, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>{sel && <HiOutlineCheck size={7} />}{m}</button>
                                 })}
                               </div>
                             )}
@@ -1068,7 +1071,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                             <div style={{ padding: '6px 10px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                               {vis.map(m => {
                                 const sel = form.metrics.includes(m)
-                                return <button key={m} onClick={() => toggleM(m)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: 10, background: sel ? DS.accentSoft : DS.surface, border: `1.5px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>{sel && <HiOutlineCheck size={7} />}{m}</button>
+                                return <button key={m} onClick={() => toggleM(m)} style={{ padding: '3px 8px', borderRadius: 6, fontSize: 10, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>{sel && <HiOutlineCheck size={7} />}{m}</button>
                               })}
                             </div>
                           )}
@@ -1094,19 +1097,19 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
           <button onClick={onClose} style={{ padding: '8px 16px', border: `1px solid ${DS.borderMed}`, borderRadius: 8, background: DS.surface, color: DS.textSub, fontSize: 12, cursor: 'pointer' }}>Cancel</button>
           {mode === 'existing' && showForm && editingId !== null && (
             <button onClick={() => { onUpdate(editingId); setEditingId(null) }}
-              style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 12px rgba(37,99,235,0.25)' }}>
+              style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: DS.accent, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 12px rgba(37,99,235,0.25)' }}>
               Save Changes
             </button>
           )}
           {mode === 'new' && createSource === 'screener' && selectedScreenerId !== null && (
             <button onClick={handleCreateNew} disabled={!createName.trim() || createCompanies.length === 0}
-              style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: createName.trim() && createCompanies.length > 0 ? 'linear-gradient(135deg, #2563eb, #7c3aed)' : '#e2e8f0', color: createName.trim() && createCompanies.length > 0 ? '#fff' : '#94a3b8', fontSize: 12, fontWeight: 700, cursor: createName.trim() && createCompanies.length > 0 ? 'pointer' : 'not-allowed', boxShadow: createName.trim() && createCompanies.length > 0 ? '0 3px 12px rgba(37,99,235,0.25)' : 'none' }}>
+              style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: createName.trim() && createCompanies.length > 0 ? DS.accent : '#e2e8f0', color: createName.trim() && createCompanies.length > 0 ? '#fff' : '#94a3b8', fontSize: 12, fontWeight: 700, cursor: createName.trim() && createCompanies.length > 0 ? 'pointer' : 'not-allowed', boxShadow: createName.trim() && createCompanies.length > 0 ? '0 3px 12px rgba(37,99,235,0.25)' : 'none' }}>
               Create Personalization
             </button>
           )}
           {mode === 'new' && createSource === 'scratch' && (
             <button onClick={handleCreateFromScratch} disabled={!form.name.trim() || form.companies.length === 0}
-              style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: form.name.trim() && form.companies.length > 0 ? 'linear-gradient(135deg, #2563eb, #7c3aed)' : '#e2e8f0', color: form.name.trim() && form.companies.length > 0 ? '#fff' : '#94a3b8', fontSize: 12, fontWeight: 700, cursor: form.name.trim() && form.companies.length > 0 ? 'pointer' : 'not-allowed', boxShadow: form.name.trim() && form.companies.length > 0 ? '0 3px 12px rgba(37,99,235,0.25)' : 'none' }}>
+              style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: form.name.trim() && form.companies.length > 0 ? DS.accent : '#e2e8f0', color: form.name.trim() && form.companies.length > 0 ? '#fff' : '#94a3b8', fontSize: 12, fontWeight: 700, cursor: form.name.trim() && form.companies.length > 0 ? 'pointer' : 'not-allowed', boxShadow: form.name.trim() && form.companies.length > 0 ? '0 3px 12px rgba(37,99,235,0.25)' : 'none' }}>
               Create Personalization
             </button>
           )}
@@ -1321,31 +1324,31 @@ export default function AIChat({
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: DS.bg, fontFamily: 'Inter, sans-serif' }}>
 
       {/* Header */}
-      <div style={{ background: DS.surface, borderBottom: `1px solid rgba(15,23,42,0.07)`, flexShrink: 0, boxShadow: '0 1px 0 rgba(15,23,42,0.04)' }}>
-        <div style={{ height: 52, display: 'flex', alignItems: 'center', gap: 10, padding: '0 20px' }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <BsRobot size={15} color="#fff" />
+      <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
+        <div style={{ height: 52, display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px' }}>
+          <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#2563eb,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(37,99,235,0.28)' }}>
+            <BsRobot size={16} color="#fff" />
           </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DS.text }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em', fontFamily: 'Instrument Sans, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {activeSession?.title ?? 'FinBot AI'}
             </div>
-            <div style={{ fontSize: 9, color: DS.textFaint }}>NSE/BSE · Indian Equities</div>
+            <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 1 }}>NSE/BSE · Indian equities assistant</div>
           </div>
 
           {/* Active config chip */}
-          <div style={{ marginLeft: 8, display: 'flex', alignItems: 'center', gap: 5, padding: '3px 9px', background: activeBotConfigId !== null ? DS.accentSoft : DS.purpleSoft, border: `1px solid ${activeBotConfigId !== null ? DS.accentBorder : 'rgba(124,58,237,0.2)'}`, borderRadius: 6 }}>
-            <RiSparklingLine size={10} color={activeBotConfigId !== null ? DS.accent : DS.purple} />
-            <span style={{ fontSize: 10, color: activeBotConfigId !== null ? DS.accent : DS.purple, fontWeight: 600 }}>
+          <div style={{ marginLeft: 4, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: activeBotConfigId !== null ? DS.accentSoft : DS.purpleSoft, border: `1px solid ${activeBotConfigId !== null ? DS.accentBorder : DS.purpleBorder}`, borderRadius: 999 }}>
+            <RiSparklingLine size={11} color={activeBotConfigId !== null ? DS.accent : DS.purple} />
+            <span style={{ fontSize: 11, color: activeBotConfigId !== null ? DS.accent : DS.purple, fontWeight: 600 }}>
               {activeBotConfigId !== null ? (activeCfg?.name ?? 'Config') : 'Default'}
             </span>
           </div>
 
           <div style={{ marginLeft: 'auto', position: 'relative' }}>
             <button onClick={() => { setConfigForm({ ...effectiveCfg }); setShowConfig(true) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: DS.surface, border: `1px solid ${showCoach ? DS.accent : DS.border}`, borderRadius: 8, cursor: 'pointer', fontSize: 12, color: showCoach ? DS.accent : DS.textSub, transition: 'all 0.15s', boxShadow: showCoach ? `0 0 0 3px rgba(37,99,235,0.12)` : 'none' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: showCoach ? DS.accentSoft : DS.surface, border: `1px solid ${showCoach ? DS.accent : DS.borderMed}`, borderRadius: 9, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: showCoach ? DS.accent : DS.textSub, transition: 'all 0.15s', boxShadow: showCoach ? `0 0 0 3px rgba(37,99,235,0.12)` : 'none' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.color = DS.accent; e.currentTarget.style.background = DS.accentSoft }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = showCoach ? DS.accent : DS.border; e.currentTarget.style.color = showCoach ? DS.accent : DS.textSub; e.currentTarget.style.background = DS.surface }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = showCoach ? DS.accent : DS.borderMed; e.currentTarget.style.color = showCoach ? DS.accent : DS.textSub; e.currentTarget.style.background = showCoach ? DS.accentSoft : DS.surface }}
             >
               <HiOutlinePencilSquare size={13} /> Personalize
             </button>
@@ -1356,7 +1359,7 @@ export default function AIChat({
                 {/* Arrow */}
                 <div style={{ position: 'absolute', top: -7, right: 18, width: 14, height: 14, background: '#1e293b', transform: 'rotate(45deg)', borderRadius: 2 }} />
                 <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 10 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <HiOutlinePencilSquare size={14} color="#fff" />
                   </div>
                   <div>
@@ -1365,7 +1368,7 @@ export default function AIChat({
                   </div>
                 </div>
                 <button onClick={() => { sessionStorage.setItem('finbot_coach_seen', '1'); setShowCoach(false) }}
-                  style={{ width: '100%', padding: '7px', background: DS.accent, border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', letterSpacing: '0.01em' }}
+                  style={{ width: '100%', padding: '7px', background: DS.accent, border: '1px solid rgba(37,99,235,0.12)', borderRadius: DS.radius, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', letterSpacing: '0.01em' }}
                 >
                   Got it
                 </button>
@@ -1376,34 +1379,31 @@ export default function AIChat({
       </div>
 
       {/* Messages */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: msgs.length === 0 ? '24px 24px 12px' : '20px 24px', position: 'relative', background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37,99,235,0.07), transparent 55%)' }}>
         {msgs.length === 0 && (
-          <div style={{ maxWidth: 620, margin: '0 auto' }}>
-            <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '18px', marginBottom: 18, boxShadow: '0 2px 12px rgba(37,99,235,0.04)' }}>
-              <div style={{ display: 'flex', gap: 13, alignItems: 'flex-start' }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <HiOutlineSparkles size={19} color="#fff" />
-                </div>
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: DS.text, marginBottom: 6 }}>Hello! I&apos;m FinBot.</div>
-                  <div style={{ fontSize: 13, color: DS.textSub, lineHeight: 1.8 }}>Your AI analytics assistant for Indian equities — investment theses, financial comparisons, mandate analysis, and rich data insights for NSE/BSE companies.</div>
-                  <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                    {['Analysis', 'Comparisons', 'Investment Thesis', 'Cash Flow', 'Risk'].map(c => (
-                      <span key={c} style={{ fontSize: 10, color: DS.accent, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 6, padding: '2px 8px', fontWeight: 500 }}>{c}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
+          <div style={{ maxWidth: 680, margin: '8vh auto 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg,#2563eb,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 28px rgba(37,99,235,0.28)', marginBottom: 16 }}>
+              <HiOutlineSparkles size={24} color="#fff" />
             </div>
-            <div style={{ fontSize: 9, color: DS.textFaint, letterSpacing: '0.08em', marginBottom: 9 }}>SUGGESTED QUERIES</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: DS.text, marginBottom: 8, letterSpacing: '-0.03em', fontFamily: 'Instrument Sans, sans-serif', textAlign: 'center' }}>Hello! I&apos;m FinBot.</div>
+            <div style={{ fontSize: 13.5, color: DS.textSub, lineHeight: 1.7, textAlign: 'center', maxWidth: 460, marginBottom: 16 }}>Your AI analytics assistant for Indian equities — theses, comparisons, mandate analysis, and filings-backed insights for NSE/BSE companies.</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginBottom: 22 }}>
+              {['Analysis', 'Comparisons', 'Investment Thesis', 'Cash Flow', 'Risk'].map(c => (
+                <span key={c} style={{ fontSize: 11, color: DS.accent, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 999, padding: '4px 10px', fontWeight: 600 }}>{c}</span>
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: DS.textFaint, letterSpacing: '0.08em', fontWeight: 700, marginBottom: 10, alignSelf: 'stretch' }}>TRY A QUERY</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, width: '100%' }}>
               {SUGGESTIONS.map((sug, i) => (
                 <button key={i} onClick={() => send(sug)}
-                  style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 9, padding: '10px 14px', color: '#475569', fontSize: 13, cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 9 }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.color = DS.accent; e.currentTarget.style.background = DS.accentSoft }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.color = '#475569'; e.currentTarget.style.background = DS.surface }}
+                  style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '12px 14px', color: DS.textSub, fontSize: 12.5, cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', display: 'flex', alignItems: 'flex-start', gap: 10, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.color = DS.accent; e.currentTarget.style.background = '#f8faff'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(37,99,235,0.08)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.color = DS.textSub; e.currentTarget.style.background = DS.surface; e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
                 >
-                  <HiOutlineArrowTrendingUp size={13} color={DS.accent} style={{ flexShrink: 0 }} />{sug}
+                  <span style={{ width: 26, height: 26, borderRadius: 8, background: DS.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <HiOutlineArrowTrendingUp size={13} color={DS.accent} />
+                  </span>
+                  <span style={{ lineHeight: 1.45 }}>{sug}</span>
                 </button>
               ))}
             </div>
@@ -1415,7 +1415,7 @@ export default function AIChat({
             const refOpen = m.role === 'assistant' && showRef === m.id && !!m.rich
             return (
               <div key={m.id} style={{ display: 'flex', gap: 11, flexDirection: m.role === 'user' ? 'row-reverse' : 'row', alignItems: 'flex-start' }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: m.role === 'user' ? 'linear-gradient(135deg,#2563eb,#1d4ed8)' : 'linear-gradient(135deg,#1e293b,#0f172a)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(15,23,42,0.18)' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, background: m.role === 'user' ? 'linear-gradient(135deg,#2563eb,#1d4ed8)' : 'linear-gradient(135deg,#312e81,#1e293b)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: m.role === 'user' ? '0 4px 10px rgba(37,99,235,0.22)' : '0 4px 10px rgba(15,23,42,0.18)' }}>
                   {m.role === 'user' ? <span style={{ fontSize: 11, color: '#fff', fontWeight: 700 }}>U</span> : <BsRobot size={14} color="#fff" />}
                 </div>
                 {/* Split layout when reference is open */}
@@ -1454,11 +1454,11 @@ export default function AIChat({
                 ) : (
                   <div style={{ flex: 1, minWidth: 0 }}>
                     {m.role === 'user' ? (
-                      <div style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', borderRadius: '12px 4px 12px 12px', padding: '10px 14px', display: 'inline-block', maxWidth: '85%', float: 'right', boxShadow: '0 4px 12px rgba(37,99,235,0.18)' }}>
+                      <div style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', borderRadius: '16px 16px 4px 16px', padding: '10px 14px', display: 'inline-block', maxWidth: '82%', float: 'right', boxShadow: '0 8px 20px rgba(37,99,235,0.22)' }}>
                         <div style={{ fontSize: 13, color: '#fff', lineHeight: 1.6 }}>{m.text}</div>
                       </div>
                     ) : (
-                      <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: '4px 12px 12px 12px', padding: '12px 14px', boxShadow: '0 1px 3px rgba(15,23,42,0.04)' }}>
+                      <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: '4px 16px 16px 16px', padding: '14px 16px', boxShadow: '0 2px 10px rgba(15,23,42,0.04)' }}>
                         {m.rich ? <RichResponse rich={m.rich as RichContent} /> : <div style={{ fontSize: 13, color: '#334155', lineHeight: 1.7 }}>{m.text}</div>}
                       </div>
                     )}
@@ -1497,7 +1497,7 @@ export default function AIChat({
 
           {loading && (
             <div style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <BsRobot size={14} color="#fff" />
               </div>
               <div style={{ flex: 1, maxWidth: 460 }}>
@@ -1510,27 +1510,27 @@ export default function AIChat({
       </div>
 
       {/* Composer */}
-      <div style={{ borderTop: `1px solid ${DS.border}`, padding: '12px 20px 14px', flexShrink: 0, background: DS.surface, boxShadow: '0 -1px 0 rgba(15,23,42,0.04)' }}>
-        <div style={{ maxWidth: 740, margin: '0 auto', display: 'flex', alignItems: 'flex-end', gap: 9, background: DS.surfaceHover, border: `1.5px solid rgba(15,23,42,0.10)`, borderRadius: 12, padding: '10px 13px', transition: 'all 0.2s', boxShadow: '0 1px 3px rgba(15,23,42,0.04)' }}
-          onFocusCapture={e => { e.currentTarget.style.borderColor = 'rgba(37,99,235,0.40)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.09)'; e.currentTarget.style.background = DS.surface }}
-          onBlurCapture={e => { e.currentTarget.style.borderColor = 'rgba(15,23,42,0.10)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(15,23,42,0.04)'; e.currentTarget.style.background = DS.surfaceHover }}
+      <div style={{ padding: '10px 20px 14px', flexShrink: 0, background: 'linear-gradient(180deg, rgba(244,246,249,0) 0%, #f4f6f9 28%)' }}>
+        <div style={{ maxWidth: 740, margin: '0 auto', display: 'flex', alignItems: 'flex-end', gap: 10, background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 16, padding: '10px 12px 10px 14px', transition: 'all 0.2s', boxShadow: '0 8px 24px rgba(15,23,42,0.06)' }}
+          onFocusCapture={e => { e.currentTarget.style.borderColor = 'rgba(37,99,235,0.40)'; e.currentTarget.style.boxShadow = '0 0 0 4px rgba(37,99,235,0.08), 0 8px 24px rgba(37,99,235,0.08)' }}
+          onBlurCapture={e => { e.currentTarget.style.borderColor = DS.borderMed; e.currentTarget.style.boxShadow = '0 8px 24px rgba(15,23,42,0.06)' }}
         >
-          <div style={{ display: 'flex', gap: 3 }}>
+          <div style={{ display: 'flex', gap: 2, paddingBottom: 4 }}>
             <IBtn icon={<HiOutlinePaperClip size={16} />} />
             <IBtn icon={<HiOutlineMicrophone size={16} />} />
           </div>
           <textarea value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-            placeholder="Ask FinBot — 'Generate investment mandate for TCS last 3 years'…"
+            placeholder="Ask FinBot anything about Indian equities…"
             rows={1}
-            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: DS.text, fontSize: 13, fontFamily: 'Inter, sans-serif', resize: 'none', lineHeight: 1.6, maxHeight: 110, overflowY: 'auto' }}
+            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: DS.text, fontSize: 13.5, fontFamily: 'Inter, sans-serif', resize: 'none', lineHeight: 1.55, maxHeight: 110, overflowY: 'auto', padding: '6px 0' }}
           />
           <button onClick={() => send()} disabled={!input.trim() || loading}
-            style={{ width: 34, height: 34, borderRadius: 8, background: input.trim() && !loading ? 'linear-gradient(135deg, #2563eb, #7c3aed)' : '#e2e8f0', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', flexShrink: 0, boxShadow: input.trim() && !loading ? '0 2px 8px rgba(37,99,235,0.3)' : 'none', transition: 'all 0.15s' }}>
-            <HiOutlinePaperAirplane size={14} color={input.trim() && !loading ? '#fff' : '#94a3b8'} />
+            style={{ width: 38, height: 38, borderRadius: 12, background: input.trim() && !loading ? 'linear-gradient(135deg,#2563eb,#4f46e5)' : '#e2e8f0', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', flexShrink: 0, boxShadow: input.trim() && !loading ? '0 6px 14px rgba(37,99,235,0.32)' : 'none', transition: 'all 0.15s' }}>
+            <HiOutlinePaperAirplane size={15} color={input.trim() && !loading ? '#fff' : '#94a3b8'} />
           </button>
         </div>
-        <div style={{ fontSize: 9, color: DS.textFaint, marginTop: 5, textAlign: 'center' }}>FinBot may make errors · Verify with original filings · Enter to send</div>
+        <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 8, textAlign: 'center' }}>FinBot may make errors · Verify with original filings · Enter to send</div>
       </div>
 
       {showConfig && (

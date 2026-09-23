@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import {
   HiOutlineSparkles, HiOutlineBookmark, HiOutlineAdjustmentsHorizontal,
   HiOutlineChevronRight, HiOutlineArrowUpRight, HiOutlineChartBar,
   HiOutlineMagnifyingGlass, HiOutlineChevronLeft,
   HiOutlineArrowTrendingUp, HiOutlineExclamationTriangle,
   HiOutlineChatBubbleLeftRight, HiOutlineClipboardDocumentList,
-  HiOutlineXMark, HiOutlineFunnel, HiOutlineChevronDown, HiOutlineCheck,
+  HiOutlineXMark, HiOutlineFunnel, HiOutlineCheck,
 } from 'react-icons/hi2'
 import { BsRobot } from 'react-icons/bs'
 import { ALL_SECTORS, SECTOR_COMPANIES, getAnnualData } from '../data/finData'
@@ -25,21 +25,24 @@ const DS = {
   bg: '#f4f6f9',
   surface: '#ffffff',
   surfaceHover: '#f8fafc',
-  border: 'rgba(15,23,42,0.07)',
-  borderMed: 'rgba(15,23,42,0.1)',
+  border: 'rgba(15,23,42,0.08)',
+  borderMed: 'rgba(15,23,42,0.12)',
   text: '#0f172a',
   textSub: '#475569',
   textMuted: '#64748b',
   textFaint: '#94a3b8',
   accent: '#2563eb',
   accentDark: '#1d4ed8',
-  accentSoft: 'rgba(37,99,235,0.06)',
-  accentBorder: 'rgba(37,99,235,0.14)',
-  accentHover: 'rgba(37,99,235,0.08)',
+  accentTwo: '#4f46e5',
+  accentSoft: 'rgba(37,99,235,0.08)',
+  accentBorder: 'rgba(37,99,235,0.18)',
+  accentHover: 'rgba(37,99,235,0.12)',
   green: '#16a34a', greenSoft: '#f0fdf4', greenBorder: '#bbf7d0',
   red: '#dc2626', redSoft: '#fef2f2', redBorder: '#fecaca',
   amber: '#d97706', amberSoft: 'rgba(217,119,6,0.08)', amberBorder: 'rgba(217,119,6,0.22)',
   purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.07)', purpleBorder: 'rgba(124,58,237,0.18)',
+  shadow: 'none',
+  radius: 10,
 }
 
 /* ─── Company data ──────────────────────────────────────────────── */
@@ -141,7 +144,7 @@ function getPageNumbers(current: number, total: number): (number | '...')[] {
 /* ─── Widget chrome ─────────────────────────────────────────────── */
 function WidgetCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', boxShadow: '0 2px 8px rgba(15,23,42,0.03)', ...style }}>
+    <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: DS.radius, overflow: 'hidden', ...style }}>
       {children}
     </div>
   )
@@ -149,7 +152,7 @@ function WidgetCard({ children, style }: { children: React.ReactNode; style?: Re
 
 function WidgetHeader({ icon, title, meta, action }: { icon: React.ReactNode; title: string; meta?: string; action?: React.ReactNode }) {
   return (
-    <div style={{ padding: '8px 12px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 8, background: '#fafbfc' }}>
+    <div style={{ padding: '6px 12px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 8, background: DS.surfaceHover, flexShrink: 0 }}>
       <div style={{ flexShrink: 0, color: DS.accent }}>{icon}</div>
       <span style={{ fontSize: 12.5, fontWeight: 600, color: DS.text, flex: 1 }}>{title}</span>
       {meta && <span style={{ fontSize: 9.5, color: DS.textFaint }}>{meta}</span>}
@@ -167,47 +170,56 @@ function CompanyFilters({ activeGroup, onGroup, onSelect, sectors }: { activeGro
   ]
   const values = activeGroup === 'indices' ? ['Nifty 500'] : activeGroup === 'marketCap' ? ['Large Cap', 'Mid Cap', 'Small Cap'] : activeGroup === 'sectors' ? sectors : ['All Companies']
   return (
-    <div style={{ position: 'absolute', top: 54, right: 14, zIndex: 30, width: 540, display: 'flex', background: '#fff', border: `1px solid ${DS.borderMed}`, borderRadius: 10, boxShadow: '0 14px 34px rgba(15,23,42,0.18)', overflow: 'hidden' }}>
-      <div style={{ width: 190, flexShrink: 0, borderRight: `1px solid ${DS.borderMed}` }}>
-        <div style={{ padding: '14px 16px', borderBottom: `1px solid ${DS.borderMed}`, fontSize: 14, fontWeight: 700, color: DS.text }}>Filters</div>
+    <div style={{ position: 'absolute', top: 54, right: 14, zIndex: 30, width: 440, display: 'flex', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 10, boxShadow: '0 4px 14px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04)', overflow: 'hidden' }}>
+      <div style={{ width: 150, flexShrink: 0, borderRight: `1px solid ${DS.borderMed}` }}>
+        <div style={{ padding: '10px 12px', borderBottom: `1px solid ${DS.borderMed}`, fontSize: 13, fontWeight: 700, color: DS.text }}>Filters</div>
         {groups.map(group => {
           const selected = activeGroup === group.id
-          return <button key={group.id} onClick={() => onGroup(group.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: selected ? '#f1f5f9' : '#fff', border: 'none', borderBottom: `1px solid ${DS.border}`, color: selected ? DS.text : DS.textSub, fontSize: 12, fontWeight: selected ? 700 : 500, textAlign: 'left', cursor: 'pointer' }}>
+          return <button key={group.id} onClick={() => onGroup(group.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: selected ? '#f1f5f9' : '#fff', border: 'none', borderBottom: `1px solid ${DS.border}`, color: selected ? DS.text : DS.textSub, fontSize: 12, fontWeight: selected ? 700 : 500, textAlign: 'left', cursor: 'pointer' }}>
             {group.label}{group.id !== 'all' && <HiOutlineChevronRight size={14} color={selected ? DS.text : DS.textMuted} />}
           </button>
         })}
       </div>
-      <div style={{ flex: 1, maxHeight: 330, overflowY: 'auto' }}>
-        <div style={{ padding: '14px 18px', borderBottom: `1px solid ${DS.borderMed}`, fontSize: 12, fontWeight: 700, color: DS.text }}>{groups.find(group => group.id === activeGroup)?.label}</div>
-        {values.map(value => <button key={value} onClick={() => onSelect(value)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', background: '#fff', border: 'none', borderBottom: `1px dashed ${DS.borderMed}`, color: DS.textSub, fontSize: 12, textAlign: 'left', cursor: 'pointer' }} onMouseEnter={event => event.currentTarget.style.background = '#f8fafc'} onMouseLeave={event => event.currentTarget.style.background = '#fff'}>{value}<HiOutlineChevronRight size={13} color={DS.textFaint} /></button>)}
+      <div style={{ flex: 1, maxHeight: 280, overflowY: 'auto' }}>
+        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${DS.borderMed}`, fontSize: 12, fontWeight: 700, color: DS.text }}>{groups.find(group => group.id === activeGroup)?.label}</div>
+        {values.map(value => <button key={value} onClick={() => onSelect(value)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fff', border: 'none', borderBottom: `1px dashed ${DS.borderMed}`, color: DS.textSub, fontSize: 12, textAlign: 'left', cursor: 'pointer' }} onMouseEnter={event => event.currentTarget.style.background = '#f8fafc'} onMouseLeave={event => event.currentTarget.style.background = '#fff'}>{value}<HiOutlineChevronRight size={13} color={DS.textFaint} /></button>)}
       </div>
     </div>
   )
 }
 
-function CompanyTable({ companies, watchlistCompanies, onAddCompany }: { companies: { name: string; sector: string }[]; watchlistCompanies: string[]; onAddCompany: (company: string) => void }) {
-  return <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 720 }}>
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(190px, 1.5fr) minmax(150px, 1.1fr) repeat(4, minmax(105px, 0.8fr))', background: '#f3f4f6', borderBottom: `1px solid ${DS.borderMed}`, color: DS.textMuted, fontSize: 10, fontWeight: 700 }}>
-      {['Company Name', 'Sector', 'Revenue', 'Net Profit', 'OPM %', 'Total Assets'].map(label => <div key={label} style={{ padding: '10px 12px', textAlign: label === 'Company Name' || label === 'Sector' ? 'left' : 'right' }}>{label}</div>)}
-    </div>
-    {companies.map((co, index) => {
-      const row = (getAnnualData(co.name)['2025'] ?? getAnnualData(co.name)['2024'] ?? {}) as Record<string, unknown>
-      const format = (value: unknown, suffix = '') => value === undefined ? '—' : `${Number(value).toLocaleString('en-IN', { maximumFractionDigits: 1 })}${suffix}`
-      return <div key={`${co.name}-${index}`} style={{ display: 'grid', gridTemplateColumns: 'minmax(190px, 1.5fr) minmax(150px, 1.1fr) repeat(4, minmax(105px, 0.8fr))', borderBottom: `1px solid ${DS.border}`, background: index % 2 ? '#fbfbfc' : '#fff', color: DS.text, fontSize: 12 }}>
-        <div style={{ padding: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={() => onAddCompany(co.name)} disabled={watchlistCompanies.includes(co.name)} title={watchlistCompanies.includes(co.name) ? 'Already in watchlist' : 'Add to watchlist'} style={{ width: 20, height: 20, padding: 0, border: 'none', background: 'transparent', color: watchlistCompanies.includes(co.name) ? DS.green : DS.accent, fontSize: 18, lineHeight: 1, cursor: watchlistCompanies.includes(co.name) ? 'default' : 'pointer' }}>
-            {watchlistCompanies.includes(co.name) ? <HiOutlineCheck size={16} /> : '+'}
-          </button>
-          {co.name}
+const TABLE_COLS = 'minmax(160px, 1.5fr) minmax(110px, 1.1fr) repeat(4, minmax(80px, 0.8fr))'
+
+function CompanyTable({ companies, watchlistCompanies, onAddCompany, compact }: { companies: { name: string; sector: string }[]; watchlistCompanies: string[]; onAddCompany: (company: string) => void; compact?: boolean }) {
+  const pad = compact ? '6px 10px' : '8px 12px'
+  return (
+    <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ minWidth: 0, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: TABLE_COLS, background: '#f3f4f6', borderBottom: `1px solid ${DS.borderMed}`, color: DS.textMuted, fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+          {['Company Name', 'Sector', 'Revenue', 'Net Profit', 'OPM %', 'Total Assets'].map(label => <div key={label} style={{ padding: pad, textAlign: label === 'Company Name' || label === 'Sector' ? 'left' : 'right' }}>{label}</div>)}
         </div>
-        <div style={{ padding: '12px', color: DS.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{co.sector}</div>
-        <div style={{ padding: '12px', textAlign: 'right', fontWeight: 600 }}>{format(row.Sales, ' Cr')}</div>
-        <div style={{ padding: '12px', textAlign: 'right', color: Number(row['Net Profit']) >= 0 ? DS.green : DS.red, fontWeight: 600 }}>{format(row['Net Profit'], ' Cr')}</div>
-        <div style={{ padding: '12px', textAlign: 'right', color: DS.green, fontWeight: 600 }}>{format(row['OPM %'], '%')}</div>
-        <div style={{ padding: '12px', textAlign: 'right', color: DS.textSub }}>{format(row['Total Assets'], ' Cr')}</div>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          {companies.map((co, index) => {
+            const row = (getAnnualData(co.name)['2025'] ?? getAnnualData(co.name)['2024'] ?? {}) as Record<string, unknown>
+            const format = (value: unknown, suffix = '') => value === undefined || value === '' ? '—' : `${Number(value).toLocaleString('en-IN', { maximumFractionDigits: 1 })}${suffix}`
+            return <div key={`${co.name}-${index}`} style={{ display: 'grid', gridTemplateColumns: TABLE_COLS, borderBottom: `1px solid ${DS.border}`, background: index % 2 ? '#fbfbfc' : '#fff', color: DS.text, fontSize: compact ? 11 : 12, height: compact ? 38 : 42 }}>
+              <div style={{ padding: pad, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                <button onClick={() => onAddCompany(co.name)} disabled={watchlistCompanies.includes(co.name)} title={watchlistCompanies.includes(co.name) ? 'Already in watchlist' : 'Add to watchlist'} style={{ width: 18, height: 18, padding: 0, border: 'none', background: 'transparent', color: watchlistCompanies.includes(co.name) ? DS.green : DS.accent, fontSize: 16, lineHeight: 1, cursor: watchlistCompanies.includes(co.name) ? 'default' : 'pointer', flexShrink: 0 }}>
+                  {watchlistCompanies.includes(co.name) ? <HiOutlineCheck size={14} /> : '+'}
+                </button>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{co.name}</span>
+              </div>
+              <div style={{ padding: pad, color: DS.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center' }}>{co.sector}</div>
+              <div style={{ padding: pad, textAlign: 'right', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>{format(row.Sales, ' Cr')}</div>
+              <div style={{ padding: pad, textAlign: 'right', color: Number(row['Net Profit']) >= 0 ? DS.green : DS.red, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>{format(row['Net Profit'], ' Cr')}</div>
+              <div style={{ padding: pad, textAlign: 'right', color: DS.green, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>{format(row['OPM %'], '%')}</div>
+              <div style={{ padding: pad, textAlign: 'right', color: DS.textSub, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>{format(row['Total Assets'], ' Cr')}</div>
+            </div>
+          })}
+        </div>
       </div>
-    })}
-  </div></div>
+    </div>
+  )
 }
 
 function NavLink({ label, onClick }: { label: string; onClick: () => void }) {
@@ -222,9 +234,9 @@ function NavLink({ label, onClick }: { label: string; onClick: () => void }) {
 
 function EmptyState({ icon, text, cta, onCta }: { icon: React.ReactNode; text: string; cta?: string; onCta?: () => void }) {
   return (
-    <div style={{ padding: '28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center' }}>
-      <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: DS.textFaint }}>{icon}</div>
-      <div style={{ fontSize: 12, color: DS.textMuted, lineHeight: 1.6, maxWidth: 200 }}>{text}</div>
+    <div style={{ padding: '14px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center', height: '100%', justifyContent: 'center' }}>
+      <div style={{ width: 32, height: 32, borderRadius: 9, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: DS.textFaint }}>{icon}</div>
+      <div style={{ fontSize: 11, color: DS.textMuted, lineHeight: 1.5, maxWidth: 200 }}>{text}</div>
       {cta && onCta && (
         <button onClick={onCta} style={{ fontSize: 11, fontWeight: 600, color: DS.accent, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 7, padding: '5px 14px', marginTop: 2, cursor: 'pointer' }}
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,99,235,0.12)' }}
@@ -236,8 +248,6 @@ function EmptyState({ icon, text, cta, onCta }: { icon: React.ReactNode; text: s
   )
 }
 
-const PAGE_SIZE = 8
-
 export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, onUpdateWatchlist, recentScreenerRuns, recentChatMessages }: Props) {
   const [activeInsight, setActiveInsight] = useState<number | null>(null)
   const [search, setSearch] = useState('')
@@ -246,8 +256,34 @@ export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, o
   const [capFilter, setCapFilter] = useState('All')
   const [filterGroup, setFilterGroup] = useState<'indices' | 'sectors' | 'marketCap' | 'all'>('indices')
   const [showFilterPopup, setShowFilterPopup] = useState(false)
-  const [showSectorMenu, setShowSectorMenu] = useState(false)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(6)
+  const [vw, setVw] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }))
+  const tableAreaRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const onResize = () => setVw({ w: window.innerWidth, h: window.innerHeight })
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const compact = vw.h < 820 || vw.w < 1180
+  const sideW = vw.w < 1100 ? 240 : vw.w < 1280 ? 268 : 300
+
+  useEffect(() => {
+    const el = tableAreaRef.current
+    if (!el) return
+    const measure = () => {
+      const rowH = compact ? 38 : 42
+      const headerH = compact ? 30 : 34
+      const n = Math.floor((el.clientHeight - headerH) / rowH)
+      setPageSize(Math.max(3, Math.min(14, n || 5)))
+    }
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    measure()
+    return () => ro.disconnect()
+  }, [compact])
 
   const now = new Date()
   const hour = now.getHours()
@@ -256,7 +292,6 @@ export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, o
 
   const activeWatchlist = watchlists.find(watchlist => watchlist.id === activeWatchlistId) ?? watchlists[0]
   const watchlistCompanies = activeWatchlist?.companies ?? []
-  const watchlistMetrics = activeWatchlist?.metrics ?? []
 
   const UNIQUE_SECTORS = Array.from(new Set(ALL_COMPANIES_LIST.map(c => c.sector)))
 
@@ -276,64 +311,54 @@ export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, o
     })
   }, [search, sectorFilter, niftyOnly, capFilter])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage = Math.min(page, totalPages)
-  const pageData = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const pageData = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   const handleSearch = (v: string) => { setSearch(v); setPage(1) }
-  const handleSector = (v: string) => { setSectorFilter(v); setPage(1); setShowSectorMenu(false) }
   const addCompanyToWatchlist = (company: string) => {
     if (!activeWatchlist || activeWatchlist.companies.includes(company)) return
     onUpdateWatchlist(activeWatchlist.id, { companies: [...activeWatchlist.companies, company] })
   }
 
   const pageNums = getPageNumbers(safePage, totalPages)
+  const padX = compact ? 12 : 16
+  const bodyPad = compact ? '10px 12px 10px' : '14px 18px 14px'
+  const btnSize = compact ? 26 : 28
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: DS.bg, fontFamily: 'Inter, sans-serif' }}>
 
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, flexShrink: 0, boxShadow: '0 1px 0 rgba(15,23,42,0.04)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', height: 48, padding: '0 20px', gap: 12 }}>
+      <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', height: compact ? 42 : 48, padding: `0 ${compact ? 14 : 20}px`, gap: 12 }}>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em' }}>Dashboard</div>
+            <div style={{ fontSize: compact ? 14 : 16, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em', fontFamily: 'Instrument Sans, sans-serif' }}>Dashboard</div>
             <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 1 }}>{greeting} · {dateStr}</div>
           </div>
           <div style={{ marginLeft: 'auto' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, color: DS.green, background: DS.greenSoft, border: `1px solid ${DS.greenBorder}`, borderRadius: 20, padding: '4px 10px', fontWeight: 500 }}>
-              <div className="live-dot" style={{ width: 6, height: 6 }} />
-              NSE Open
-            </div>
           </div>
         </div>
       </div>
 
-      {/* ── Scrollable body ─────────────────────────────────────── */}
-      <div style={{ flex: 1, overflow: 'hidden', padding: '20px 24px 32px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 16, alignItems: 'start' }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: bodyPad, display: 'flex' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `minmax(0, 1fr) ${sideW}px`, gap: compact ? 10 : 14, flex: 1, minHeight: 0, minWidth: 0 }}>
 
-          {/* ── LEFT: Companies ─────────────────────────────── */}
-          <WidgetCard style={{ position: 'relative' }}>
-            {/* Header */}
-            <div style={{ padding: '12px 16px', borderBottom: `1px solid ${DS.border}`, background: '#fafbfc' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <HiOutlineChartBar size={15} color={DS.accent} />
+          <WidgetCard style={{ position: 'relative', height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: compact ? '8px 12px 8px' : '10px 14px', borderBottom: `1px solid ${DS.border}`, background: DS.surfaceHover, flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: compact ? 6 : 8 }}>
+                <HiOutlineChartBar size={14} color={DS.accent} />
                 <span style={{ fontSize: 12.5, fontWeight: 600, color: DS.text, flex: 1 }}>Companies</span>
                 <span style={{ fontSize: 10, color: DS.textFaint }}>{ALL_COMPANIES_LIST.length} listed</span>
               </div>
-
-              {/* Search row */}
-              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                {/* Search */}
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 7, background: DS.surface, border: `1.5px solid ${DS.borderMed}`, borderRadius: 8, padding: '6px 10px' }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 7, background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, padding: compact ? '4px 8px' : '5px 10px' }}>
                   <HiOutlineMagnifyingGlass size={13} color={DS.textFaint} />
                   <input value={search} onChange={e => handleSearch(e.target.value)}
                     placeholder="Search companies…"
                     style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 12, color: DS.text, fontFamily: 'Inter, sans-serif' }} />
                   {search && <button onClick={() => handleSearch('')} style={{ background: 'none', border: 'none', color: DS.textFaint, display: 'flex', padding: 0, cursor: 'pointer' }}><HiOutlineXMark size={13} /></button>}
                 </div>
-
-                <button onClick={() => setShowFilterPopup(value => !value)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', background: showFilterPopup ? DS.accentSoft : '#fff', border: `1.5px solid ${showFilterPopup ? DS.accent : DS.borderMed}`, borderRadius: 8, color: showFilterPopup ? DS.accent : DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}><HiOutlineFunnel size={13} /> Filter</button>
+                <button onClick={() => setShowFilterPopup(value => !value)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: compact ? '4px 10px' : '5px 12px', background: showFilterPopup ? DS.accentSoft : '#fff', border: `1px solid ${showFilterPopup ? DS.accent : DS.borderMed}`, borderRadius: 8, color: showFilterPopup ? DS.accent : DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}><HiOutlineFunnel size={13} /> Filter</button>
               </div>
               {showFilterPopup && <CompanyFilters activeGroup={filterGroup} onGroup={group => { setFilterGroup(group); setPage(1) }} onSelect={value => {
                 setShowFilterPopup(false); setPage(1)
@@ -344,98 +369,88 @@ export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, o
               }} sectors={UNIQUE_SECTORS} />}
             </div>
 
-            <CompanyTable companies={pageData} watchlistCompanies={watchlistCompanies} onAddCompany={addCompanyToWatchlist} />
-
-            {/* Footer */}
-            <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafbfc', borderTop: `1px solid ${DS.border}` }}>
-              <span style={{ fontSize: 11, color: DS.textFaint }}>
-                {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length} companies
-              </span>
+            <div ref={tableAreaRef} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <CompanyTable companies={pageData} watchlistCompanies={watchlistCompanies} onAddCompany={addCompanyToWatchlist} compact={compact} />
             </div>
 
-            {/* Smart Pagination — only when expanded */}
-            {totalPages > 1 && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '10px 16px', borderTop: `1px solid ${DS.border}`, background: '#fafbfc' }}>
-                <button disabled={safePage === 1} onClick={() => setPage(p => p - 1)}
-                  style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: safePage === 1 ? 0.35 : 1, color: DS.textMuted, cursor: safePage === 1 ? 'default' : 'pointer' }}>
-                  <HiOutlineChevronLeft size={13} />
-                </button>
-                {pageNums.map((pg, i) =>
-                  pg === '...'
-                    ? <span key={`dots-${i}`} style={{ width: 30, textAlign: 'center', color: DS.textFaint, fontSize: 12 }}>…</span>
-                    : <button key={pg} onClick={() => setPage(pg as number)}
-                        style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${pg === safePage ? DS.accentBorder : DS.border}`, background: pg === safePage ? DS.accentSoft : DS.surface, color: pg === safePage ? DS.accent : DS.textMuted, fontSize: 12, fontVariantNumeric: 'tabular-nums', fontWeight: pg === safePage ? 700 : 400, cursor: 'pointer' }}>{pg}</button>
-                )}
-                <button disabled={safePage === totalPages} onClick={() => setPage(p => p + 1)}
-                  style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${DS.border}`, background: DS.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: safePage === totalPages ? 0.35 : 1, color: DS.textMuted, cursor: safePage === totalPages ? 'default' : 'pointer' }}>
-                  <HiOutlineChevronRight size={13} />
-                </button>
-              </div>
-            )}
+            <div style={{ padding: compact ? '6px 10px' : `8px ${padX}px`, display: 'flex', alignItems: 'center', gap: 8, background: DS.surfaceHover, borderTop: `1px solid ${DS.border}`, flexShrink: 0, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 10.5, color: DS.textFaint, whiteSpace: 'nowrap' }}>
+                {filtered.length === 0 ? '0 companies' : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, filtered.length)} of ${filtered.length}`}
+              </span>
+              {totalPages > 1 && (
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <button disabled={safePage === 1} onClick={() => setPage(p => p - 1)}
+                    style={{ width: btnSize, height: btnSize, borderRadius: 7, border: `1px solid ${DS.border}`, background: DS.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: safePage === 1 ? 0.35 : 1, color: DS.textMuted, cursor: safePage === 1 ? 'default' : 'pointer' }}>
+                    <HiOutlineChevronLeft size={12} />
+                  </button>
+                  {pageNums.map((pg, i) =>
+                    pg === '...'
+                      ? <span key={`dots-${i}`} style={{ width: btnSize, textAlign: 'center', color: DS.textFaint, fontSize: 11 }}>…</span>
+                      : <button key={pg} onClick={() => setPage(pg as number)}
+                          style={{ minWidth: btnSize, height: btnSize, padding: '0 4px', borderRadius: 7, border: `1px solid ${pg === safePage ? DS.accentBorder : DS.border}`, background: pg === safePage ? DS.accentSoft : DS.surface, color: pg === safePage ? DS.accent : DS.textMuted, fontSize: 11, fontVariantNumeric: 'tabular-nums', fontWeight: pg === safePage ? 700 : 400, cursor: 'pointer' }}>{pg}</button>
+                  )}
+                  <button disabled={safePage === totalPages} onClick={() => setPage(p => p + 1)}
+                    style={{ width: btnSize, height: btnSize, borderRadius: 7, border: `1px solid ${DS.border}`, background: DS.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: safePage === totalPages ? 0.35 : 1, color: DS.textMuted, cursor: safePage === totalPages ? 'default' : 'pointer' }}>
+                    <HiOutlineChevronRight size={12} />
+                  </button>
+                </div>
+              )}
+            </div>
           </WidgetCard>
 
-          {/* ── RIGHT column ─────────────────────────────────── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-            {/* Watchlist snapshot */}
-            <WidgetCard>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 8 : 10, minHeight: 0, height: '100%', overflow: 'hidden' }}>
+            <WidgetCard style={{ flex: '0 1 auto', maxHeight: compact ? 'calc((100% - 16px) / 3)' : 'calc((100% - 20px) / 3)', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
               <WidgetHeader
                 icon={<HiOutlineBookmark size={14} />}
                 title={activeWatchlist?.name ?? 'Watchlist'}
                 action={<NavLink label="Open" onClick={() => onNavigate('compare')} />}
               />
               {watchlistCompanies.length === 0 ? (
-                <EmptyState icon={<HiOutlineBookmark size={22} />} text="No companies added yet. Open Watchlist to track companies." cta="Open Watchlist" onCta={() => onNavigate('compare')} />
+                <div style={{ flex: 1, minHeight: 0 }}><EmptyState icon={<HiOutlineBookmark size={18} />} text="No companies added yet." cta="Open Watchlist" onCta={() => onNavigate('compare')} /></div>
               ) : (
-                <div style={{ height: watchlistCompanies.length > 3 ? 150 : undefined, overflowY: watchlistCompanies.length > 3 ? 'auto' : 'visible' }}>
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
                   {watchlistCompanies.map((name, i) => (
                     <div key={name}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: i < watchlistCompanies.length - 1 ? `1px solid ${DS.border}` : 'none' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: compact ? '6px 10px' : '8px 12px', borderBottom: i < watchlistCompanies.length - 1 ? `1px solid ${DS.border}` : 'none' }}
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#fafbff'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
-                      <Avatar name={name} size={30} />
+                      <Avatar name={name} size={compact ? 26 : 28} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 12, fontWeight: 600, color: DS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
                         <div style={{ fontSize: 10, color: DS.textMuted }}>{CO_SECTOR[name] ?? '—'}</div>
                       </div>
-                      {watchlistMetrics[0] && (
-                        <span style={{ fontSize: 9, color: DS.purple, background: DS.purpleSoft, border: `1px solid ${DS.purpleBorder}`, borderRadius: 5, padding: '2px 7px', flexShrink: 0, fontWeight: 500 }}>
-                          {watchlistMetrics[0]}
-                        </span>
-                      )}
                     </div>
                   ))}
                 </div>
               )}
             </WidgetCard>
 
-            {/* AI Insights */}
-            <WidgetCard>
+            <WidgetCard style={{ flex: '0 1 auto', maxHeight: compact ? 'calc((100% - 16px) / 3)' : 'calc((100% - 20px) / 3)', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
               <WidgetHeader
                 icon={<HiOutlineSparkles size={14} style={{ color: DS.purple }} />}
                 title="AI Insights"
                 action={<NavLink label="Ask AI" onClick={() => onNavigate('chat')} />}
               />
               {recentChatMessages.length === 0 ? (
-                <EmptyState icon={<HiOutlineChatBubbleLeftRight size={22} />} text="No queries yet. Start a conversation in AI Chat to see recent activity here." cta="Open AI Chat" onCta={() => onNavigate('chat')} />
+                <div style={{ flex: 1, minHeight: 0 }}><EmptyState icon={<HiOutlineChatBubbleLeftRight size={18} />} text="No queries yet. Start a conversation in AI Chat." cta="Open AI Chat" onCta={() => onNavigate('chat')} /></div>
               ) : (
-                <div style={{ height: recentChatMessages.length > 3 ? 145 : undefined, overflowY: recentChatMessages.length > 3 ? 'auto' : 'visible', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {recentChatMessages.map((msg, i) => {
                     const IconComponents = [HiOutlineArrowTrendingUp, HiOutlineChatBubbleLeftRight, HiOutlineSparkles, HiOutlineExclamationTriangle, HiOutlineMagnifyingGlass]
                     const IconComp = IconComponents[i % IconComponents.length]
                     const isActive = activeInsight === i
                     return (
                       <div key={i} onClick={() => setActiveInsight(isActive ? null : i)}
-                        style={{ padding: '10px 12px', borderRadius: 9, background: isActive ? DS.accentSoft : '#f8fafc', border: `1px solid ${isActive ? DS.accentBorder : DS.border}`, cursor: 'pointer', transition: 'all 0.12s' }}
+                        style={{ padding: '8px 10px', borderRadius: 8, background: isActive ? DS.accentSoft : '#f8fafc', border: `1px solid ${isActive ? DS.accentBorder : DS.border}`, cursor: 'pointer', transition: 'all 0.12s' }}
                         onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = '#f1f5f9' }}
                         onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                           <IconComp size={13} color={isActive ? DS.accent : DS.textMuted} style={{ flexShrink: 0, marginTop: 1 }} />
-                          <span style={{ fontSize: 11, color: DS.textSub, lineHeight: 1.55, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg}</span>
+                          <span style={{ fontSize: 11, color: DS.textSub, lineHeight: 1.45, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg}</span>
                         </div>
                         {isActive && (
                           <button onClick={e => { e.stopPropagation(); onNavigate('chat') }}
-                            style={{ marginTop: 9, display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: '#fff', background: DS.accent, border: 'none', borderRadius: 6, padding: '5px 11px', fontWeight: 600, cursor: 'pointer' }}>
+                            style={{ marginTop: 7, display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: '#fff', background: DS.accent, border: `1px solid ${DS.accent}`, borderRadius: 7, padding: '4px 10px', fontWeight: 600, cursor: 'pointer' }}>
                             <BsRobot size={11} /> Continue in AI Chat
                           </button>
                         )}
@@ -446,28 +461,27 @@ export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, o
               )}
             </WidgetCard>
 
-            {/* Screener Activity */}
-            <WidgetCard>
+            <WidgetCard style={{ flex: '0 1 auto', maxHeight: compact ? 'calc((100% - 16px) / 3)' : 'calc((100% - 20px) / 3)', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
               <WidgetHeader
                 icon={<HiOutlineAdjustmentsHorizontal size={14} style={{ color: DS.amber }} />}
                 title="Screener Activity"
                 action={<NavLink label="Run" onClick={() => onNavigate('screener')} />}
               />
               {recentScreenerRuns.length === 0 ? (
-                <EmptyState icon={<HiOutlineClipboardDocumentList size={22} />} text="No screener runs yet. Run a query in Screener to see activity here." cta="Open Screener" onCta={() => onNavigate('screener')} />
+                <div style={{ flex: 1, minHeight: 0 }}><EmptyState icon={<HiOutlineClipboardDocumentList size={18} />} text="No screener runs yet." cta="Open Screener" onCta={() => onNavigate('screener')} /></div>
               ) : (
-                <div style={{ height: recentScreenerRuns.length > 3 ? 170 : undefined, overflowY: recentScreenerRuns.length > 3 ? 'auto' : 'visible', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {recentScreenerRuns.map((s, i) => (
                     <button key={i} onClick={() => onNavigate('screener')}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', borderRadius: 8, background: '#f8fafc', border: `1px solid ${DS.border}`, textAlign: 'left', width: '100%', cursor: 'pointer' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: compact ? '6px 8px' : '8px 10px', borderRadius: 8, background: '#f8fafc', border: `1px solid ${DS.border}`, textAlign: 'left', width: '100%', cursor: 'pointer' }}
                       onMouseEnter={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.borderColor = DS.accentBorder }}
                       onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = DS.border }}>
-                      <div style={{ width: 30, height: 30, borderRadius: 7, background: DS.amberSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <HiOutlineAdjustmentsHorizontal size={14} color={DS.amber} />
+                      <div style={{ width: 26, height: 26, borderRadius: 6, background: DS.amberSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <HiOutlineAdjustmentsHorizontal size={13} color={DS.amber} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 11, color: DS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.query}</div>
-                        <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 2 }}>{s.count} companies · {s.runAt}</div>
+                        <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 1 }}>{s.count} companies · {s.runAt}</div>
                       </div>
                       <HiOutlineArrowUpRight size={12} color={DS.textFaint} />
                     </button>
