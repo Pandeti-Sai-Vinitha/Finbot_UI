@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
   HiOutlinePaperAirplane, HiOutlineClipboard, HiOutlineArrowDownTray,
-  HiOutlineMicrophone, HiOutlinePaperClip,
   HiOutlineSparkles, HiOutlineCog6Tooth, HiOutlineXMark, HiOutlinePencilSquare,
   HiOutlineCheck, HiOutlineEye,
   HiOutlineChevronDown, HiOutlineChevronRight,
@@ -532,11 +531,13 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
   const [metricSearch, setMetricSearch] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(Object.keys(ANNUAL_METRIC_GROUPS)))
   const [companiesSectorTab, setCompaniesSectorTab] = useState<string>('')
+  const [formCompanySearch, setFormCompanySearch] = useState('')
 
   // Create New state
   const [createSource, setCreateSource] = useState<'screener' | 'scratch'>('screener')
   const [selectedScreenerId, setSelectedScreenerId] = useState<number | null>(null)
   const [createCompanies, setCreateCompanies] = useState<string[]>([])
+  const [createCompanySearch, setCreateCompanySearch] = useState('')
   const [createMetrics, setCreateMetrics] = useState<string[]>([])
   const [createName, setCreateName] = useState('')
   const [createMetricSearch, setCreateMetricSearch] = useState('')
@@ -544,12 +545,13 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
 
   const switchMode = (m: CfgMode) => {
     setMode(m); setEditingId(null)
-    if (m === 'new') { setSelectedScreenerId(null); setCreateCompanies([]); setCreateMetrics([]); setCreateName(''); setCreateSource('screener') }
+    if (m === 'new') { setSelectedScreenerId(null); setCreateCompanies([]); setCreateCompanySearch(''); setCreateMetrics([]); setCreateName(''); setCreateSource('screener') }
     if (m === 'existing') setForm({ ...DEFAULT_CFG })
   }
 
   const startEdit = (cfg: BotConfig) => {
     setEditingId(cfg.id)
+    setFormCompanySearch('')
     setForm({ name: cfg.name, sectors: cfg.sectors, companies: cfg.companies, timePeriod: cfg.timePeriod, years: cfg.years, quarters: cfg.quarters, metrics: cfg.metrics, responseStyle: cfg.responseStyle, promptInstructions: cfg.promptInstructions })
     setMode('existing')
   }
@@ -575,8 +577,9 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
       .map(([sec]) => sec)
 
   const selectScreener = (sc: SavedScreener | null) => {
-    if (!sc) { setSelectedScreenerId(null); setCreateCompanies([]); setCreateName(''); return }
+    if (!sc) { setSelectedScreenerId(null); setCreateCompanies([]); setCreateCompanySearch(''); setCreateName(''); return }
     setSelectedScreenerId(sc.id)
+    setCreateCompanySearch('')
     setCreateCompanies(sc.results.map(r => r.company))
     setCreateName(`From ${sc.name}`)
   }
@@ -595,7 +598,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
   }
 
   const Chip = ({ label, sel, onClick }: { label: string; sel: boolean; onClick: () => void }) => (
-    <button onClick={onClick} style={{ textAlign: 'left', padding: '5px 9px', borderRadius: 6, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontSize: 10, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+    <button onClick={onClick} style={{ textAlign: 'left', padding: '4px 8px', minHeight: 24, borderRadius: 6, background: sel ? DS.accentSoft : DS.surface, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, color: sel ? DS.accent : '#475569', fontSize: 10, fontWeight: sel ? 600 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
       <div style={{ width: 11, height: 11, borderRadius: 3, border: `1px solid ${sel ? DS.accent : 'rgba(100,116,139,0.3)'}`, background: sel ? DS.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         {sel && <HiOutlineCheck size={7} color="#fff" />}
       </div>
@@ -607,7 +610,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: DS.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, backdropFilter: 'blur(2px)' }} onClick={onClose}>
-      <div style={{ background: DS.surface, borderRadius: 12, width: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 28px rgba(15,23,42,0.06), 0 2px 8px rgba(15,23,42,0.03)' }} onClick={e => e.stopPropagation()}>
+      <div className="finbot-config-modal" style={{ background: DS.surface, borderRadius: 12, width: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 28px rgba(15,23,42,0.06), 0 2px 8px rgba(15,23,42,0.03)' }} onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div style={{ padding: '14px 18px 0', flexShrink: 0 }}>
@@ -625,7 +628,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
           <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 10, padding: 3 }}>
             {(['existing', 'new'] as CfgMode[]).map(m => (
               <button key={m} onClick={() => switchMode(m)}
-                style={{ flex: 1, padding: '7px 10px', borderRadius: 8, border: 'none', background: mode === m ? DS.surface : 'transparent', color: mode === m ? DS.accent : DS.textSub, fontSize: 12, fontWeight: mode === m ? 700 : 400, cursor: 'pointer', boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                style={{ flex: 1, padding: '5px 10px', minHeight: 26, borderRadius: 6, border: 'none', background: mode === m ? DS.surface : 'transparent', color: mode === m ? DS.accent : DS.textSub, fontSize: 11, fontWeight: mode === m ? 700 : 500, cursor: 'pointer', boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                 {m === 'existing' ? <RiSparklingLine size={12} color={mode === m ? DS.accent : DS.textFaint} /> : <HiOutlineSparkles size={12} color={mode === m ? DS.accent : DS.textFaint} />}
                 {m === 'existing' ? 'Existing' : 'Create New'}
               </button>
@@ -652,20 +655,20 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                   cfg.responseStyle,
                 ].filter(Boolean).join(' · ')
                 return (
-                  <div key={cfg.id} style={{ border: `1px solid ${isActive ? DS.accentBorder : DS.border}`, borderRadius: 10, padding: '10px 12px', background: isActive ? 'rgba(37,99,235,0.03)' : DS.surface, boxShadow: isActive ? '0 2px 8px rgba(37,99,235,0.04)' : 'none' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                  <div key={cfg.id} style={{ border: `1px solid ${isActive ? DS.accentBorder : DS.border}`, borderRadius: 8, padding: '7px 9px', background: isActive ? 'rgba(37,99,235,0.03)' : DS.surface, boxShadow: isActive ? '0 2px 8px rgba(37,99,235,0.04)' : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                       {isDefault && <RiSparklingLine size={11} color={isActive ? DS.accent : DS.textFaint} style={{ flexShrink: 0 }} />}
-                      <span style={{ fontWeight: 700, fontSize: 13, color: isActive ? DS.accent : DS.text, flex: 1 }}>{cfg.name}</span>
-                      {isDefault && <span style={{ fontSize: 8, color: DS.purple, background: DS.purpleSoft, padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>DEFAULT</span>}
-                      {isActive && <span style={{ fontSize: 8, color: DS.green, background: DS.greenSoft, border: `1px solid ${DS.greenBorder}`, padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>ACTIVE</span>}
+                      <span style={{ fontWeight: 700, fontSize: 12, color: isActive ? DS.accent : DS.text, flex: 1 }}>{cfg.name}</span>
+                      {isDefault && <span style={{ fontSize: 8, color: DS.purple, background: DS.purpleSoft, padding: '1px 5px', borderRadius: 5, fontWeight: 700 }}>DEFAULT</span>}
+                      {isActive && <span style={{ fontSize: 8, color: DS.green, background: DS.greenSoft, border: `1px solid ${DS.greenBorder}`, padding: '1px 5px', borderRadius: 5, fontWeight: 700 }}>ACTIVE</span>}
                       <button onClick={() => setExpandedCardId(isExpanded ? null : cfg.id)}
-                        style={{ width: 28, height: 28, borderRadius: 8, background: isExpanded ? DS.accentSoft : 'transparent', border: `1px solid ${isExpanded ? DS.accentBorder : 'transparent'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: isExpanded ? DS.accent : DS.textFaint, flexShrink: 0, transition: 'all 0.12s' }}
+                        style={{ width: 24, height: 24, borderRadius: 6, background: isExpanded ? DS.accentSoft : 'transparent', border: `1px solid ${isExpanded ? DS.accentBorder : 'transparent'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: isExpanded ? DS.accent : DS.textFaint, flexShrink: 0, transition: 'all 0.12s' }}
                         onMouseEnter={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.color = DS.accent }}
                         onMouseLeave={e => { if (!isExpanded) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = DS.textFaint } }}>
                         <HiOutlineEye size={12} />
                       </button>
                     </div>
-                    <div style={{ fontSize: 11, color: DS.textFaint, marginBottom: 8 }}>{summary || 'No settings configured'}</div>
+                    <div style={{ fontSize: 10, color: DS.textFaint, marginBottom: 6 }}>{summary || 'No settings configured'}</div>
                     {isExpanded && (
                       <div style={{ background: DS.surfaceHover, border: `1px solid ${DS.border}`, borderRadius: 8, padding: '9px 11px', marginBottom: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
                         {[
@@ -684,15 +687,15 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                     )}
                     {confirmingDelete ? (
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => { onDelete(cfg.id); setDeleteConfirmId(null) }} style={{ flex: 1, padding: '6px', borderRadius: 8, border: `1px solid ${DS.redBorder}`, background: DS.redSoft, color: DS.red, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Confirm Delete</button>
-                        <button onClick={() => setDeleteConfirmId(null)} style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${DS.border}`, background: 'transparent', color: DS.textSub, fontSize: 11, cursor: 'pointer' }}>Cancel</button>
+                        <button onClick={() => { onDelete(cfg.id); setDeleteConfirmId(null) }} style={{ flex: 1, padding: '4px 9px', minHeight: 24, borderRadius: 6, border: `1px solid ${DS.redBorder}`, background: DS.redSoft, color: DS.red, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>Confirm Delete</button>
+                        <button onClick={() => setDeleteConfirmId(null)} style={{ padding: '4px 9px', minHeight: 24, borderRadius: 6, border: `1px solid ${DS.border}`, background: 'transparent', color: DS.textSub, fontSize: 10, cursor: 'pointer' }}>Cancel</button>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => startEdit(cfg)} style={{ flex: 1, padding: '6px', borderRadius: 8, border: `1px solid ${DS.accentBorder}`, background: 'transparent', color: DS.accent, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Edit</button>
-                        {!isActive && <button onClick={() => onActivate(cfg.id)} style={{ flex: 1, padding: '6px', borderRadius: 8, border: 'none', background: DS.accent, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Activate</button>}
-                        {isActive && <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: DS.green, background: DS.greenSoft, border: `1px solid ${DS.greenBorder}`, borderRadius: 8, padding: '6px' }}><HiOutlineCheck size={12} /> Active</div>}
-                        {!isDefault && <button onClick={() => setDeleteConfirmId(cfg.id)} style={{ width: 32, borderRadius: 8, border: `1px solid ${DS.border}`, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textFaint }}
+                        <button onClick={() => startEdit(cfg)} style={{ flex: 1, padding: '4px 9px', minHeight: 24, borderRadius: 6, border: `1px solid ${DS.accentBorder}`, background: 'transparent', color: DS.accent, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+                        {!isActive && <button onClick={() => onActivate(cfg.id)} style={{ flex: 1, padding: '4px 9px', minHeight: 24, borderRadius: 6, border: 'none', background: DS.accent, color: '#fff', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>Activate</button>}
+                        {isActive && <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: DS.green, background: DS.greenSoft, border: `1px solid ${DS.greenBorder}`, borderRadius: 6, padding: '4px 9px', minHeight: 24 }}><HiOutlineCheck size={11} /> Active</div>}
+                        {!isDefault && <button onClick={() => setDeleteConfirmId(cfg.id)} style={{ width: 28, height: 24, borderRadius: 6, border: `1px solid ${DS.border}`, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textFaint }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor = DS.redBorder; e.currentTarget.style.background = DS.redSoft; e.currentTarget.style.color = DS.red }}
                           onMouseLeave={e => { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = DS.textFaint }}>
                           <HiOutlineTrash size={12} />
@@ -757,18 +760,20 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                         )
                       })}
                     </div>
-                    <div style={{ maxHeight: 150, overflowY: 'auto', border: `1px solid ${DS.border}`, borderTop: 'none', borderRadius: '0 0 8px 8px', marginBottom: 2 }}>
-                      {secCos.map(co => {
+                    <input value={formCompanySearch} onChange={e => setFormCompanySearch(e.target.value)} placeholder="Search companies…"
+                      style={{ width: '100%', padding: '5px 9px', border: `1px solid ${DS.border}`, borderRadius: 6, fontSize: 10, color: DS.text, background: DS.surfaceHover, outline: 'none', boxSizing: 'border-box', margin: '6px 0' }} />
+                    <div style={{ maxHeight: 150, overflowY: 'auto', padding: 5, border: `1px solid ${DS.border}`, borderRadius: 7, marginBottom: 2 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {secCos.filter(co => co.toLowerCase().includes(formCompanySearch.toLowerCase())).map(co => {
                         const sel = form.companies.includes(co)
                         return (
-                          <label key={co} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderBottom: `1px solid ${DS.border}`, cursor: 'pointer', background: sel ? DS.accentSoft : DS.surface }}>
-                            <input type="checkbox" checked={sel}
-                              onChange={() => setForm(f => ({ ...f, companies: sel ? f.companies.filter(c => c !== co) : [...f.companies, co] }))}
-                              style={{ accentColor: DS.accent, width: 13, height: 13, flexShrink: 0 }} />
-                            <span style={{ flex: 1, fontSize: 12, color: sel ? DS.accent : DS.text, fontWeight: sel ? 600 : 400 }}>{co}</span>
+                          <label key={co} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 7px', border: `1px solid ${sel ? DS.accentBorder : DS.border}`, borderRadius: 6, cursor: 'pointer', background: sel ? DS.accentSoft : DS.surface }}>
+                            <input type="checkbox" checked={sel} onChange={() => setForm(f => ({ ...f, companies: sel ? f.companies.filter(c => c !== co) : [...f.companies, co] }))} style={{ accentColor: DS.accent, width: 12, height: 12, flexShrink: 0 }} />
+                            <span style={{ fontSize: 10, color: sel ? DS.accent : DS.text, fontWeight: sel ? 600 : 400, whiteSpace: 'nowrap' }}>{co}</span>
                           </label>
                         )
                       })}
+                      </div>
                     </div>
                   </>
                 )
@@ -830,7 +835,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
             <div style={{ marginTop: 12 }}>
               {/* Source cards */}
               <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 8 }}>CHOOSE A STARTING POINT</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 12 }}>
                 {([
                   { id: 'screener' as const, icon: <HiOutlineAdjustmentsHorizontal size={22} />, title: 'From Screener', desc: 'Use an existing saved screener as the company base' },
                   { id: 'scratch' as const, icon: <HiOutlinePencilSquare size={22} />, title: 'From Scratch', desc: 'Manually pick sectors, companies, and metrics' },
@@ -838,15 +843,15 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                   const isSel = createSource === opt.id
                   return (
                     <button key={opt.id} onClick={() => setCreateSource(opt.id)}
-                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, padding: '14px 14px', borderRadius: 10, border: `2px solid ${isSel ? DS.accentBorder : DS.border}`, background: isSel ? DS.accentSoft : '#fafafa', cursor: 'pointer', textAlign: 'left', transition: 'all 0.14s', boxShadow: isSel ? '0 2px 12px rgba(37,99,235,0.10)' : '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)' }}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, padding: '8px 9px', borderRadius: 8, border: `1px solid ${isSel ? DS.accentBorder : DS.border}`, background: isSel ? DS.accentSoft : '#fafafa', cursor: 'pointer', textAlign: 'left', transition: 'all 0.14s', boxShadow: isSel ? '0 2px 8px rgba(37,99,235,0.08)' : 'none' }}
                       onMouseEnter={e => { if (!isSel) { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.background = 'rgba(37,99,235,0.03)' } }}
                       onMouseLeave={e => { if (!isSel) { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.background = '#fafafa' } }}>
-                      <div style={{ width: 40, height: 40, borderRadius: 10, background: isSel ? DS.accent : '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.14s' }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 7, background: isSel ? DS.accent : '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.14s' }}>
                         <span style={{ color: isSel ? '#fff' : DS.textFaint }}>{opt.icon}</span>
                       </div>
                       <div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: isSel ? DS.accent : DS.text, marginBottom: 3 }}>{opt.title}</div>
-                        <div style={{ fontSize: 10, color: DS.textFaint, lineHeight: 1.5 }}>{opt.desc}</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: isSel ? DS.accent : DS.text, marginBottom: 2 }}>{opt.title}</div>
+                        <div style={{ fontSize: 9, color: DS.textFaint, lineHeight: 1.4 }}>{opt.desc}</div>
                       </div>
                     </button>
                   )
@@ -866,18 +871,18 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 132, overflowY: 'auto', marginBottom: 10, paddingRight: 2 }}>
                   {savedScreeners.map(sc => {
                     const isSel = selectedScreenerId === sc.id
                     return (
                       <button key={sc.id} onClick={() => selectScreener(isSel ? null : sc)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, border: `1px solid ${isSel ? DS.accentBorder : DS.border}`, background: isSel ? DS.accentSoft : DS.surface, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: isSel ? DS.accent : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <HiOutlineAdjustmentsHorizontal size={15} color={isSel ? '#fff' : DS.textFaint} />
+                        style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 8px', borderRadius: 6, border: `1px solid ${isSel ? DS.accentBorder : DS.border}`, background: isSel ? DS.accentSoft : DS.surface, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}>
+                        <div style={{ width: 24, height: 24, borderRadius: 6, background: isSel ? DS.accent : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <HiOutlineAdjustmentsHorizontal size={12} color={isSel ? '#fff' : DS.textFaint} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: isSel ? DS.accent : DS.text }}>{sc.name}</div>
-                          <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 1 }}>{sc.results.length} companies · {sc.query.slice(0, 40)}{sc.query.length > 40 ? '…' : ''}</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: isSel ? DS.accent : DS.text }}>{sc.name}</div>
+                          <div style={{ fontSize: 9, color: DS.textFaint, marginTop: 1 }}>{sc.results.length} companies · {sc.query.slice(0, 40)}{sc.query.length > 40 ? '…' : ''}</div>
                         </div>
                         {isSel && <HiOutlineCheck size={14} color={DS.accent} />}
                       </button>
@@ -910,19 +915,23 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                         </div>
                       </div>
                     )}
-                    <div style={{ maxHeight: 150, overflowY: 'auto', border: `1px solid ${DS.border}`, borderRadius: 8, marginBottom: 12 }}>
-                      {sc.results.map(r => {
-                        const sel = createCompanies.includes(r.company)
-                        return (
-                          <label key={r.company} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderBottom: `1px solid ${DS.border}`, cursor: 'pointer', background: sel ? DS.accentSoft : DS.surface }}>
-                            <input type="checkbox" checked={sel}
-                              onChange={() => setCreateCompanies(prev => sel ? prev.filter(c => c !== r.company) : [...prev, r.company])}
-                              style={{ accentColor: DS.accent, width: 13, height: 13, flexShrink: 0 }} />
-                            <span style={{ flex: 1, fontSize: 12, color: sel ? DS.accent : DS.text, fontWeight: sel ? 600 : 400 }}>{r.company}</span>
-                            <span style={{ fontSize: 10, color: DS.textFaint, fontVariantNumeric: 'tabular-nums' }}>₹{r.price}</span>
-                          </label>
-                        )
-                      })}
+                    <input value={createCompanySearch} onChange={e => setCreateCompanySearch(e.target.value)} placeholder="Search companies…"
+                      style={{ width: '100%', padding: '5px 9px', border: `1px solid ${DS.border}`, borderRadius: 6, fontSize: 10, color: DS.text, background: DS.surfaceHover, outline: 'none', boxSizing: 'border-box', marginBottom: 6 }} />
+                    <div style={{ maxHeight: 150, overflowY: 'auto', marginBottom: 10, padding: 5, border: `1px solid ${DS.border}`, borderRadius: 7 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        {sc.results.filter(r => r.company.toLowerCase().includes(createCompanySearch.toLowerCase())).map(r => {
+                          const sel = createCompanies.includes(r.company)
+                          return (
+                            <label key={r.company} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 7px', border: `1px solid ${sel ? DS.accentBorder : DS.border}`, borderRadius: 6, cursor: 'pointer', background: sel ? DS.accentSoft : DS.surface, maxWidth: '100%' }}>
+                              <input type="checkbox" checked={sel}
+                                onChange={() => setCreateCompanies(prev => sel ? prev.filter(c => c !== r.company) : [...prev, r.company])}
+                                style={{ accentColor: DS.accent, width: 12, height: 12, flexShrink: 0 }} />
+                              <span style={{ fontSize: 10, color: sel ? DS.accent : DS.text, fontWeight: sel ? 600 : 400, whiteSpace: 'nowrap' }}>{r.company}</span>
+                              <span style={{ fontSize: 8, color: DS.textFaint, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>₹{r.price}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
                     </div>
 
                     {/* Step 3: Metrics */}
@@ -1024,18 +1033,20 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                             )
                           })}
                         </div>
-                        <div style={{ maxHeight: 130, overflowY: 'auto', border: `1px solid ${DS.border}`, borderTop: 'none', borderRadius: '0 0 8px 8px', marginBottom: 10 }}>
-                          {secCos.map(co => {
+                        <input value={formCompanySearch} onChange={e => setFormCompanySearch(e.target.value)} placeholder="Search companies…"
+                          style={{ width: '100%', padding: '5px 9px', border: `1px solid ${DS.border}`, borderRadius: 6, fontSize: 10, color: DS.text, background: DS.surfaceHover, outline: 'none', boxSizing: 'border-box', margin: '6px 0' }} />
+                        <div style={{ maxHeight: 130, overflowY: 'auto', padding: 5, border: `1px solid ${DS.border}`, borderRadius: 7, marginBottom: 10 }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {secCos.filter(co => co.toLowerCase().includes(formCompanySearch.toLowerCase())).map(co => {
                             const sel = form.companies.includes(co)
                             return (
-                              <label key={co} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderBottom: `1px solid ${DS.border}`, cursor: 'pointer', background: sel ? DS.accentSoft : DS.surface }}>
-                                <input type="checkbox" checked={sel}
-                                  onChange={() => setForm(f => ({ ...f, companies: sel ? f.companies.filter(c => c !== co) : [...f.companies, co] }))}
-                                  style={{ accentColor: DS.accent, width: 13, height: 13, flexShrink: 0 }} />
-                                <span style={{ flex: 1, fontSize: 12, color: sel ? DS.accent : DS.text, fontWeight: sel ? 600 : 400 }}>{co}</span>
+                              <label key={co} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 7px', border: `1px solid ${sel ? DS.accentBorder : DS.border}`, borderRadius: 6, cursor: 'pointer', background: sel ? DS.accentSoft : DS.surface }}>
+                                <input type="checkbox" checked={sel} onChange={() => setForm(f => ({ ...f, companies: sel ? f.companies.filter(c => c !== co) : [...f.companies, co] }))} style={{ accentColor: DS.accent, width: 12, height: 12, flexShrink: 0 }} />
+                                <span style={{ fontSize: 10, color: sel ? DS.accent : DS.text, fontWeight: sel ? 600 : 400, whiteSpace: 'nowrap' }}>{co}</span>
                               </label>
                             )
                           })}
+                          </div>
                         </div>
                       </>
                     )
@@ -1093,23 +1104,23 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '11px 18px', borderTop: `1px solid ${DS.border}`, display: 'flex', gap: 7, flexShrink: 0 }}>
-          <button onClick={onClose} style={{ padding: '8px 16px', border: `1px solid ${DS.borderMed}`, borderRadius: 8, background: DS.surface, color: DS.textSub, fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+        <div style={{ padding: '9px 18px', borderTop: `1px solid ${DS.border}`, display: 'flex', gap: 7, flexShrink: 0 }}>
+          <button onClick={onClose} style={{ padding: '5px 10px', minHeight: 26, border: `1px solid ${DS.borderMed}`, borderRadius: 6, background: DS.surface, color: DS.textSub, fontSize: 11, cursor: 'pointer' }}>Cancel</button>
           {mode === 'existing' && showForm && editingId !== null && (
             <button onClick={() => { onUpdate(editingId); setEditingId(null) }}
-              style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: DS.accent, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 12px rgba(37,99,235,0.25)' }}>
+              style={{ flex: 1, padding: '5px 10px', minHeight: 26, border: 'none', borderRadius: 6, background: DS.accent, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 12px rgba(37,99,235,0.25)' }}>
               Save Changes
             </button>
           )}
           {mode === 'new' && createSource === 'screener' && selectedScreenerId !== null && (
             <button onClick={handleCreateNew} disabled={!createName.trim() || createCompanies.length === 0}
-              style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: createName.trim() && createCompanies.length > 0 ? DS.accent : '#e2e8f0', color: createName.trim() && createCompanies.length > 0 ? '#fff' : '#94a3b8', fontSize: 12, fontWeight: 700, cursor: createName.trim() && createCompanies.length > 0 ? 'pointer' : 'not-allowed', boxShadow: createName.trim() && createCompanies.length > 0 ? '0 3px 12px rgba(37,99,235,0.25)' : 'none' }}>
+              style={{ flex: 1, padding: '5px 10px', minHeight: 26, border: 'none', borderRadius: 6, background: createName.trim() && createCompanies.length > 0 ? DS.accent : '#e2e8f0', color: createName.trim() && createCompanies.length > 0 ? '#fff' : '#94a3b8', fontSize: 11, fontWeight: 700, cursor: createName.trim() && createCompanies.length > 0 ? 'pointer' : 'not-allowed', boxShadow: createName.trim() && createCompanies.length > 0 ? '0 3px 12px rgba(37,99,235,0.25)' : 'none' }}>
               Create Personalization
             </button>
           )}
           {mode === 'new' && createSource === 'scratch' && (
             <button onClick={handleCreateFromScratch} disabled={!form.name.trim() || form.companies.length === 0}
-              style={{ flex: 1, padding: '9px', border: 'none', borderRadius: 8, background: form.name.trim() && form.companies.length > 0 ? DS.accent : '#e2e8f0', color: form.name.trim() && form.companies.length > 0 ? '#fff' : '#94a3b8', fontSize: 12, fontWeight: 700, cursor: form.name.trim() && form.companies.length > 0 ? 'pointer' : 'not-allowed', boxShadow: form.name.trim() && form.companies.length > 0 ? '0 3px 12px rgba(37,99,235,0.25)' : 'none' }}>
+              style={{ flex: 1, padding: '5px 10px', minHeight: 26, border: 'none', borderRadius: 6, background: form.name.trim() && form.companies.length > 0 ? DS.accent : '#e2e8f0', color: form.name.trim() && form.companies.length > 0 ? '#fff' : '#94a3b8', fontSize: 11, fontWeight: 700, cursor: form.name.trim() && form.companies.length > 0 ? 'pointer' : 'not-allowed', boxShadow: form.name.trim() && form.companies.length > 0 ? '0 3px 12px rgba(37,99,235,0.25)' : 'none' }}>
               Create Personalization
             </button>
           )}
@@ -1224,13 +1235,13 @@ function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }
           </button>
         )}
       </div>
-      <div style={{ overflow: 'auto', maxHeight: 400 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+      <div style={{ maxWidth: '100%', minHeight: 0, overflowX: 'auto', overflowY: 'auto', maxHeight: 400, overscrollBehavior: 'contain' }}>
+        <table style={{ width: 'max-content', minWidth: 650, borderCollapse: 'collapse', fontSize: 11 }}>
           <thead>
             <tr style={{ background: '#f0f4ff' }}>
-              <th style={{ padding: '6px 12px', textAlign: 'left', color: DS.textSub, fontWeight: 600, fontSize: 10, whiteSpace: 'nowrap', minWidth: 130, position: 'sticky', left: 0, background: '#f0f4ff' }}>Metric</th>
+              <th style={{ padding: '6px 12px', textAlign: 'left', color: DS.textSub, fontWeight: 600, fontSize: 10, whiteSpace: 'nowrap', minWidth: 130, position: 'sticky', top: 0, left: 0, zIndex: 2, background: '#f0f4ff' }}>Metric</th>
               {companyData.map(({ co }) => (
-                <th key={co} style={{ padding: '6px 10px', textAlign: 'right', color: DS.accent, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80 }}>{co}</th>
+                <th key={co} style={{ padding: '6px 10px', textAlign: 'right', color: DS.accent, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', minWidth: 80, position: 'sticky', top: 0, zIndex: 1, background: '#f0f4ff' }}>{co}</th>
               ))}
             </tr>
           </thead>
@@ -1325,9 +1336,9 @@ export default function AIChat({
 
       {/* Header */}
       <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
-        <div style={{ height: 52, display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px' }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#2563eb,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(37,99,235,0.28)' }}>
-            <BsRobot size={16} color="#fff" />
+        <div style={{ height: 48, display: 'flex', alignItems: 'center', gap: 10, padding: '0 20px' }}>
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg,#2563eb,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(37,99,235,0.28)' }}>
+            <BsRobot size={14} color="#fff" />
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em', fontFamily: 'Instrument Sans, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1346,7 +1357,7 @@ export default function AIChat({
 
           <div style={{ marginLeft: 'auto', position: 'relative' }}>
             <button onClick={() => { setConfigForm({ ...effectiveCfg }); setShowConfig(true) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: showCoach ? DS.accentSoft : DS.surface, border: `1px solid ${showCoach ? DS.accent : DS.borderMed}`, borderRadius: 9, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: showCoach ? DS.accent : DS.textSub, transition: 'all 0.15s', boxShadow: showCoach ? `0 0 0 3px rgba(37,99,235,0.12)` : 'none' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', minHeight: 26, background: showCoach ? DS.accentSoft : DS.surface, border: `1px solid ${showCoach ? DS.accent : DS.borderMed}`, borderRadius: 6, cursor: 'pointer', fontSize: 11, fontWeight: 600, color: showCoach ? DS.accent : DS.textSub, transition: 'all 0.15s', boxShadow: showCoach ? `0 0 0 3px rgba(37,99,235,0.12)` : 'none' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.color = DS.accent; e.currentTarget.style.background = DS.accentSoft }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = showCoach ? DS.accent : DS.borderMed; e.currentTarget.style.color = showCoach ? DS.accent : DS.textSub; e.currentTarget.style.background = showCoach ? DS.accentSoft : DS.surface }}
             >
@@ -1393,15 +1404,15 @@ export default function AIChat({
               ))}
             </div>
             <div style={{ fontSize: 10, color: DS.textFaint, letterSpacing: '0.08em', fontWeight: 700, marginBottom: 10, alignSelf: 'stretch' }}>TRY A QUERY</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, width: '100%' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, width: '100%' }}>
               {SUGGESTIONS.map((sug, i) => (
                 <button key={i} onClick={() => send(sug)}
-                  style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, padding: '12px 14px', color: DS.textSub, fontSize: 12.5, cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', display: 'flex', alignItems: 'flex-start', gap: 10, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }}
+                  style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 6, padding: '5px 8px', minHeight: 28, color: DS.textSub, fontSize: 10.5, cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.color = DS.accent; e.currentTarget.style.background = '#f8faff'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(37,99,235,0.08)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.color = DS.textSub; e.currentTarget.style.background = DS.surface; e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)' }}
                 >
-                  <span style={{ width: 26, height: 26, borderRadius: 8, background: DS.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <HiOutlineArrowTrendingUp size={13} color={DS.accent} />
+                  <span style={{ width: 20, height: 20, borderRadius: 6, background: DS.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <HiOutlineArrowTrendingUp size={11} color={DS.accent} />
                   </span>
                   <span style={{ lineHeight: 1.45 }}>{sug}</span>
                 </button>
@@ -1510,24 +1521,20 @@ export default function AIChat({
       </div>
 
       {/* Composer */}
-      <div style={{ padding: '10px 20px 14px', flexShrink: 0, background: 'linear-gradient(180deg, rgba(244,246,249,0) 0%, #f4f6f9 28%)' }}>
-        <div style={{ maxWidth: 740, margin: '0 auto', display: 'flex', alignItems: 'flex-end', gap: 10, background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 16, padding: '10px 12px 10px 14px', transition: 'all 0.2s', boxShadow: '0 8px 24px rgba(15,23,42,0.06)' }}
-          onFocusCapture={e => { e.currentTarget.style.borderColor = 'rgba(37,99,235,0.40)'; e.currentTarget.style.boxShadow = '0 0 0 4px rgba(37,99,235,0.08), 0 8px 24px rgba(37,99,235,0.08)' }}
+      <div style={{ padding: '8px 20px 12px', flexShrink: 0, background: 'linear-gradient(180deg, rgba(244,246,249,0) 0%, #f4f6f9 28%)' }}>
+        <div style={{ maxWidth: 740, margin: '0 auto', display: 'flex', alignItems: 'flex-end', gap: 8, background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 10, padding: '7px 8px 7px 10px', transition: 'all 0.2s', boxShadow: '0 8px 24px rgba(15,23,42,0.06)' }}
+          onFocusCapture={e => { e.currentTarget.style.borderColor = DS.borderMed; e.currentTarget.style.boxShadow = '0 8px 24px rgba(15,23,42,0.06)' }}
           onBlurCapture={e => { e.currentTarget.style.borderColor = DS.borderMed; e.currentTarget.style.boxShadow = '0 8px 24px rgba(15,23,42,0.06)' }}
         >
-          <div style={{ display: 'flex', gap: 2, paddingBottom: 4 }}>
-            <IBtn icon={<HiOutlinePaperClip size={16} />} />
-            <IBtn icon={<HiOutlineMicrophone size={16} />} />
-          </div>
-          <textarea value={input} onChange={e => setInput(e.target.value)}
+          <textarea className="no-focus-glow" value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
             placeholder="Ask FinBot anything about Indian equities…"
             rows={1}
-            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: DS.text, fontSize: 13.5, fontFamily: 'Inter, sans-serif', resize: 'none', lineHeight: 1.55, maxHeight: 110, overflowY: 'auto', padding: '6px 0' }}
+            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: DS.text, fontSize: 12.5, fontFamily: 'Inter, sans-serif', resize: 'none', lineHeight: 1.5, maxHeight: 110, overflowY: 'auto', padding: '4px 0' }}
           />
           <button onClick={() => send()} disabled={!input.trim() || loading}
-            style={{ width: 38, height: 38, borderRadius: 12, background: input.trim() && !loading ? 'linear-gradient(135deg,#2563eb,#4f46e5)' : '#e2e8f0', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', flexShrink: 0, boxShadow: input.trim() && !loading ? '0 6px 14px rgba(37,99,235,0.32)' : 'none', transition: 'all 0.15s' }}>
-            <HiOutlinePaperAirplane size={15} color={input.trim() && !loading ? '#fff' : '#94a3b8'} />
+            style={{ width: 32, height: 32, borderRadius: 8, background: input.trim() && !loading ? 'linear-gradient(135deg,#2563eb,#4f46e5)' : '#e2e8f0', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', flexShrink: 0, boxShadow: input.trim() && !loading ? '0 6px 14px rgba(37,99,235,0.32)' : 'none', transition: 'all 0.15s' }}>
+            <HiOutlinePaperAirplane size={13} color={input.trim() && !loading ? '#fff' : '#94a3b8'} />
           </button>
         </div>
         <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 8, textAlign: 'center' }}>FinBot may make errors · Verify with original filings · Enter to send</div>
@@ -1555,12 +1562,3 @@ export default function AIChat({
   )
 }
 
-function IBtn({ icon }: { icon: React.ReactNode }) {
-  return (
-    <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: DS.textFaint, display: 'flex', alignItems: 'center', padding: '2px', borderRadius: 5, transition: 'color 0.12s' }}
-      onMouseEnter={e => e.currentTarget.style.color = DS.accent}
-      onMouseLeave={e => e.currentTarget.style.color = DS.textFaint}>
-      {icon}
-    </button>
-  )
-}

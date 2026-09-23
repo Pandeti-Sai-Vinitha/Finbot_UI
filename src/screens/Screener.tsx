@@ -107,6 +107,8 @@ export default function Screener({
   const [results, setResults] = useState<ReturnType<typeof runScreener> | null>(null)
   const [addedSet, setAddedSet] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState<string | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
+  const [showSavedMenu, setShowSavedMenu] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -181,8 +183,15 @@ export default function Screener({
 
   const deleteScreener = (id: number, e: React.MouseEvent) => {
     e.stopPropagation()
+    setDeleteConfirmId(id)
+  }
+
+  const confirmDeleteScreener = () => {
+    if (deleteConfirmId === null) return
+    const id = deleteConfirmId
     onDeleteSavedScreener(id)
     if (activeScreenerId === id) newScreener()
+    setDeleteConfirmId(null)
   }
 
   const foundMetrics = ALL_METRICS.filter(m => query.includes(m))
@@ -190,56 +199,33 @@ export default function Screener({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: DS.bg, fontFamily: 'Inter, sans-serif', overflow: 'hidden' }}>
 
-      {/* ── Saved screeners bar ── */}
-      <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, overflowX: 'auto', minHeight: 38 }}>
-        {savedScreeners.length > 0 && (
-          <span style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', flexShrink: 0, marginRight: 2 }}>SAVED</span>
-        )}
-        {savedScreeners.map(sc => {
-          const active = activeScreenerId === sc.id
-          return (
-            <div key={sc.id} style={{ display: 'flex', alignItems: 'center', gap: 0, borderRadius: 7, background: active ? DS.accentSoft : DS.surfaceHover, border: `1px solid ${active ? DS.accentBorder : DS.border}`, flexShrink: 0, overflow: 'hidden', transition: 'all 0.12s' }}>
-              <button
-                onClick={() => loadScreener(sc)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px 5px 10px', background: 'none', border: 'none', cursor: 'pointer' }}>
-                <HiOutlineBookmark size={11} color={active ? DS.accent : DS.textFaint} />
-                <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, color: active ? DS.accent : DS.textSub, whiteSpace: 'nowrap' }}>{sc.name}</span>
-                {sc.results && (
-                  <span style={{ fontSize: 9, color: active ? DS.accent : DS.textFaint, background: active ? 'rgba(37,99,235,0.12)' : '#e2e8f0', borderRadius: 10, padding: '1px 6px' }}>{sc.results.length}</span>
-                )}
-              </button>
-              <div style={{ width: 1, height: 20, background: active ? DS.accentBorder : DS.border, flexShrink: 0 }} />
-              <button
-                onClick={e => deleteScreener(sc.id, e)}
-                title="Delete screener"
-                style={{ width: 30, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: DS.textFaint, flexShrink: 0, padding: 0 }}
-                onMouseEnter={e => { e.currentTarget.style.color = DS.red; e.currentTarget.style.background = DS.redSoft }}
-                onMouseLeave={e => { e.currentTarget.style.color = DS.textFaint; e.currentTarget.style.background = 'none' }}>
-                <HiOutlineTrash size={11} />
-              </button>
-            </div>
-          )
-        })}
-        <button onClick={newScreener}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 7, background: activeScreenerId === null && savedScreeners.length > 0 ? DS.accentSoft : 'transparent', border: `1px solid ${activeScreenerId === null && savedScreeners.length > 0 ? DS.accentBorder : 'transparent'}`, color: activeScreenerId === null && savedScreeners.length > 0 ? DS.accent : DS.textFaint, fontSize: 12, cursor: 'pointer', flexShrink: 0, transition: 'all 0.12s' }}
-          onMouseEnter={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.borderColor = DS.accentBorder }}
-          onMouseLeave={e => { if (activeScreenerId !== null || savedScreeners.length === 0) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'transparent' } }}>
-          <HiOutlinePlus size={11} /> {savedScreeners.length === 0 ? 'New Screener' : 'New'}
-        </button>
+      {/* Shared page navbar */}
+      <div style={{ height: 48, background: DS.surface, borderBottom: `1px solid ${DS.border}`, padding: '0 20px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 7, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <HiOutlineAdjustmentsHorizontal size={14} color="#fff" />
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: DS.text, lineHeight: 1.1 }}>Screener</div>
+          <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 2, whiteSpace: 'nowrap' }}>Build queries to filter companies by financial metrics</div>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }}>
+          <button onClick={() => setShowSavedMenu(value => !value)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 9px', minHeight: 26, borderRadius: 6, border: `1px solid ${showSavedMenu ? DS.accentBorder : DS.borderMed}`, background: showSavedMenu ? DS.accentSoft : DS.surface, color: showSavedMenu ? DS.accent : DS.textSub, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>
+            <HiOutlineBookmark size={11} /> Saved {savedScreeners.length > 0 && <span style={{ fontSize: 8, background: showSavedMenu ? 'rgba(37,99,235,0.12)' : '#e2e8f0', borderRadius: 10, padding: '1px 5px' }}>{savedScreeners.length}</span>} <HiOutlineChevronDown size={10} />
+          </button>
+          <button onClick={newScreener} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}><HiOutlinePlus size={11} /> New</button>
+          {showSavedMenu && <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 44, width: 220, maxHeight: 280, overflowY: 'auto', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, boxShadow: '0 10px 24px rgba(15,23,42,0.14)', zIndex: 100 }}>
+            {savedScreeners.length === 0 ? <div style={{ padding: '12px 14px', fontSize: 10, color: DS.textFaint }}>No saved screeners</div> : savedScreeners.map(sc => {
+              const active = activeScreenerId === sc.id
+              return <div key={sc.id} style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${DS.border}`, background: active ? DS.accentSoft : DS.surface }}>
+                <button onClick={() => { loadScreener(sc); setShowSavedMenu(false) }} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 9px', background: 'none', border: 'none', color: active ? DS.accent : DS.textSub, fontSize: 11, fontWeight: active ? 700 : 500, textAlign: 'left', cursor: 'pointer' }}><HiOutlineBookmark size={10} /><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sc.name}</span><span style={{ marginLeft: 'auto', fontSize: 8, color: DS.textFaint }}>{sc.results.length}</span></button>
+                <button onClick={e => deleteScreener(sc.id, e)} title="Delete screener" style={{ width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 4, background: 'none', border: 'none', color: DS.textFaint, cursor: 'pointer' }}><HiOutlineTrash size={11} /></button>
+              </div>
+            })}
+          </div>}
+        </div>
       </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: '12px 16px 20px' }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <div style={{ width: 32, height: 32, borderRadius: DS.radius, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <HiOutlineAdjustmentsHorizontal size={16} color="#fff" />
-          </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em', fontFamily: 'Instrument Sans, sans-serif' }}>Screener</h1>
-            <div style={{ fontSize: 11.5, color: DS.textSub, marginTop: 1 }}>Build queries to filter companies by financial metrics</div>
-          </div>
-        </div>
 
         <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16 }}>
 
@@ -247,7 +233,9 @@ export default function Screener({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0 }}>
 
             {/* Query Builder */}
-            <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: DS.radius, overflow: 'hidden' }}>
+            <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: DS.radius, overflow: 'hidden' }}
+              onFocusCapture={e => { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.boxShadow = 'none' }}
+              onBlurCapture={e => { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.boxShadow = 'none' }}>
               <div style={{ padding: '8px 12px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em' }}>QUERY BUILDER</span>
                 {query && <button onClick={() => { setQuery(''); setResults(null) }}
@@ -256,6 +244,7 @@ export default function Screener({
                 </button>}
               </div>
               <textarea
+                className="no-focus-glow"
                 ref={textareaRef}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
@@ -324,7 +313,7 @@ export default function Screener({
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center' }}>
                   {EXAMPLE_QUERIES.map(q => (
                     <button key={q} onClick={() => { setQuery(q); setTimeout(handlePreview, 50) }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', borderRadius: 6, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, color: DS.accent, fontSize: 11, cursor: 'pointer', fontWeight: 500, transition: 'all 0.12s' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', minHeight: 26, borderRadius: 6, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, color: DS.accent, fontSize: 10, cursor: 'pointer', fontWeight: 600, transition: 'all 0.12s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = DS.accent; e.currentTarget.style.color = '#fff' }}
                       onMouseLeave={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.color = DS.accent }}>
                       {q} <HiOutlineArrowRight size={10} />
@@ -335,19 +324,19 @@ export default function Screener({
             ) : (
               /* Results table */
               <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, overflow: 'hidden', boxShadow: 'none' }}>
-                <div style={{ padding: '12px 16px', borderBottom: `1px solid ${DS.border}` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: DS.text }}>{results.length} companies matched</span>
+                <div style={{ padding: '8px 12px', borderBottom: `1px solid ${DS.border}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: DS.text }}>{results.length} companies matched</span>
                     <button onClick={() => setResults(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: DS.textFaint, fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3 }}>
                       <HiOutlineXMark size={12} /> Clear
                     </button>
                   </div>
-                  <div style={{ fontSize: 11, color: DS.textSub, background: DS.surfaceHover, border: `1px solid ${DS.border}`, borderRadius: 6, padding: '6px 10px', marginBottom: foundMetrics.length > 0 ? 6 : 0 }}>
+                  <div style={{ fontSize: 10, color: DS.textSub, background: DS.surfaceHover, border: `1px solid ${DS.border}`, borderRadius: 6, padding: '4px 8px', marginBottom: foundMetrics.length > 0 ? 5 : 0 }}>
                     <span style={{ color: DS.textFaint }}>Query: </span>{query}
                   </div>
                   {foundMetrics.length > 0 && (
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {foundMetrics.map(m => <span key={m} style={{ fontSize: 9, padding: '2px 7px', borderRadius: 6, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, color: DS.accent, fontWeight: 600 }}>{m}</span>)}
+                      {foundMetrics.map(m => <span key={m} style={{ fontSize: 8, padding: '1px 6px', borderRadius: 5, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, color: DS.accent, fontWeight: 600 }}>{m}</span>)}
                     </div>
                   )}
                 </div>
@@ -355,11 +344,11 @@ export default function Screener({
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: DS.surfaceHover }}>
-                        <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', whiteSpace: 'nowrap', background: DS.surfaceHover }}>COMPANY</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', background: DS.surfaceHover }}>PRICE</th>
-                        <th style={{ padding: '10px 12px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', background: DS.surfaceHover }}>MKT CAP</th>
-                        {foundMetrics.map(m => <th key={m} style={{ padding: '10px 12px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', whiteSpace: 'nowrap', background: DS.surfaceHover }}>{m.toUpperCase()}</th>)}
-                        <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', background: DS.surfaceHover }}>WATCHLIST</th>
+                        <th style={{ padding: '6px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', whiteSpace: 'nowrap', background: DS.surfaceHover }}>COMPANY</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', background: DS.surfaceHover }}>PRICE</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', background: DS.surfaceHover }}>MKT CAP</th>
+                        {foundMetrics.map(m => <th key={m} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', whiteSpace: 'nowrap', background: DS.surfaceHover }}>{m.toUpperCase()}</th>)}
+                        <th style={{ padding: '6px 8px', textAlign: 'center', fontSize: 10, fontWeight: 600, color: DS.textMuted, letterSpacing: '0.07em', background: DS.surfaceHover }}>WATCHLIST</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -369,18 +358,18 @@ export default function Screener({
                           <tr key={row.company} style={{ background: i % 2 === 0 ? '#fff' : '#fafbff', borderTop: `1px solid ${DS.border}` }}
                             onMouseEnter={e => e.currentTarget.style.background = DS.surfaceHover}
                             onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#fafbff'}>
-                            <td style={{ padding: '10px 16px', fontWeight: 600, color: DS.text, whiteSpace: 'nowrap' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: `1px solid ${DS.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: DS.accent, flexShrink: 0 }}>
+                            <td style={{ padding: '6px 12px', fontWeight: 600, color: DS.text, whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <div style={{ width: 24, height: 24, borderRadius: 6, background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: `1px solid ${DS.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 800, color: DS.accent, flexShrink: 0 }}>
                                   {row.company.slice(0, 2).toUpperCase()}
                                 </div>
                                 {row.company}
                               </div>
                             </td>
-                            <td style={{ padding: '10px 12px', textAlign: 'right', color: DS.text, fontVariantNumeric: 'tabular-nums' }}>₹{row.price}</td>
-                            <td style={{ padding: '10px 12px', textAlign: 'right', color: DS.textSub, fontSize: 11, fontVariantNumeric: 'tabular-nums' }}>₹{row.marketCap} Cr</td>
-                            {foundMetrics.map(m => <td key={m} style={{ padding: '10px 12px', textAlign: 'right', color: row.values[m] === '—' ? DS.textFaint : DS.text, fontVariantNumeric: 'tabular-nums' }}>{row.values[m]}</td>)}
-                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', color: DS.text, fontSize: 11, fontVariantNumeric: 'tabular-nums' }}>₹{row.price}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', color: DS.textSub, fontSize: 10, fontVariantNumeric: 'tabular-nums' }}>₹{row.marketCap} Cr</td>
+                            {foundMetrics.map(m => <td key={m} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 11, color: row.values[m] === '—' ? DS.textFaint : DS.text, fontVariantNumeric: 'tabular-nums' }}>{row.values[m]}</td>)}
+                            <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                               {inWL ? (
                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, color: DS.green, background: DS.greenSoft, border: `1px solid ${DS.greenBorder}`, borderRadius: 6, padding: '3px 8px', fontWeight: 600 }}>
                                   <HiOutlineCheck size={10} /> Added
@@ -468,6 +457,19 @@ export default function Screener({
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1e293b', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 12, fontWeight: 600, boxShadow: '0 4px 20px rgba(0,0,0,0.2)', zIndex: 100, display: 'flex', alignItems: 'center', gap: 8, pointerEvents: 'none' }}>
           <HiOutlineBookmark size={13} color="#60a5fa" /> {toast}
+        </div>
+      )}
+
+      {deleteConfirmId !== null && (
+        <div onClick={() => setDeleteConfirmId(null)} style={{ position: 'fixed', inset: 0, background: DS.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: 320, background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 10, padding: 16, boxShadow: '0 12px 30px rgba(15,23,42,0.18)' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DS.text, marginBottom: 5 }}>Delete saved screener?</div>
+            <div style={{ fontSize: 11, color: DS.textSub, lineHeight: 1.5, marginBottom: 14 }}>This will remove the saved screener and its dashboard activity.</div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+              <button onClick={() => setDeleteConfirmId(null)} style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 11, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={confirmDeleteScreener} style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.redBorder}`, background: DS.redSoft, color: DS.red, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Delete</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -257,7 +257,7 @@ export function AdminDashboard({ botConfigs }: { botConfigs: BotConfig[] }) {
 
       {/* Header */}
       <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', height: 52, padding: '0 24px', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', height: 48, padding: '0 20px', gap: 16 }}>
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: DS.text }}>Dashboard</div>
             <div style={{ fontSize: 10, color: DS.textFaint }}>{greeting} · {dateStr}</div>

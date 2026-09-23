@@ -191,6 +191,8 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
   const [showPersonalise, setShowPersonalise] = useState(false)
   const [viewOrder, setViewOrder] = useState<string[]>([...ALL_VIEW_TABS])
   const [hiddenViews, setHiddenViews] = useState<Set<string>>(new Set())
+  const [expandedMetricView, setExpandedMetricView] = useState<string | null>(null)
+  const [hiddenMetricFields, setHiddenMetricFields] = useState<Record<string, Set<string>>>({})
   const dragIdx = useRef<number | null>(null)
   const [customViews, setCustomViews] = useState<Record<string, string[]>>({})
 
@@ -235,8 +237,6 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
 
   if (!active) return null
 
-  const linkedConfig = null
-
   /* Build column list for current tab */
   const FINDATA_TAB_METRICS: Partial<Record<string, string[]>> = {
     'Annual Results': active.metrics.length ? active.metrics : ['Sales', 'Net Profit', 'OPM %', 'EPS in Rs'],
@@ -248,6 +248,22 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
     : activeTab === 'Ratios' ? RATIOS_COLS
     : activeTab === 'Price' ? PRICE_COLS
     : null)
+  const getViewMetrics = (view: string): string[] => {
+    if (customViews[view]) return customViews[view]
+    if (FINDATA_TAB_METRICS[view]) return FINDATA_TAB_METRICS[view] as string[]
+    if (view === 'Key Metrics') return KEY_METRICS_COLS
+    if (view === 'Ratios') return RATIOS_COLS
+    if (view === 'Price') return PRICE_COLS
+    return []
+  }
+  const visibleFinMetrics = finMetrics?.filter(metric => !hiddenMetricFields[activeTab]?.has(metric))
+  const toggleMetricField = (view: string, metric: string) => {
+    setHiddenMetricFields(prev => {
+      const next = new Set(prev[view] ?? [])
+      if (next.has(metric)) next.delete(metric); else next.add(metric)
+      return { ...prev, [view]: next }
+    })
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: DS.bg, fontFamily: 'Inter, sans-serif' }}>
@@ -265,18 +281,11 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
             <HiOutlineChevronDown size={12} color={DS.textSub} />
           </button>
           <span style={{ fontSize: 10, color: DS.textFaint }}>{active.companies.length} stocks</span>
-          {/* Linked BotConfig badge */}
-          {linkedConfig && (
-            <span style={{ fontSize: 10, color: DS.purple, background: DS.purpleSoft, padding: '2px 8px', borderRadius: 6, border: `1px solid ${DS.purpleBorder}`, fontWeight: 600 }}>
-              ⚡ {linkedConfig.name}
-            </span>
-          )}
-
           {showWLDropdown && (
-            <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, minWidth: 220, background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 300, overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, minWidth: 210, background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 8, boxShadow: '0 8px 20px rgba(0,0,0,0.10)', zIndex: 300, overflow: 'hidden' }}>
               {watchlists.map(w => (
                 <button key={w.id} onClick={() => { onSetActive(w.id); setShowWLDropdown(false) }}
-                  style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: DS.text, borderBottom: `1px solid ${DS.border}` }}
+                  style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', minHeight: 30, background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: DS.text, borderBottom: `1px solid ${DS.border}` }}
                   onMouseEnter={e => e.currentTarget.style.background = DS.accentSoft}
                   onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                   <span style={{ flex: 1 }}>{w.name}</span>
@@ -285,23 +294,23 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
               ))}
               {watchlists.length > 1 && active.id !== watchlists[0].id && (
                 <button onClick={() => { onDelete(active.id); setShowWLDropdown(false) }}
-                  style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: DS.red, borderBottom: `1px solid ${DS.border}` }}
+                  style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', minHeight: 28, background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: DS.red, borderBottom: `1px solid ${DS.border}` }}
                   onMouseEnter={e => e.currentTarget.style.background = DS.redSoft}
                   onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                   <HiOutlineTrash size={12} /> Delete "{active.name}"
                 </button>
               )}
               {showNewWLInput ? (
-                <div style={{ padding: '10px 12px', display: 'flex', gap: 6 }}>
+                <div style={{ padding: '7px 8px', display: 'flex', gap: 5 }}>
                   <input autoFocus value={newWLName} onChange={e => setNewWLName(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') createWatchlist(); if (e.key === 'Escape') setShowNewWLInput(false) }}
                     placeholder="Watchlist name…"
-                    style={{ flex: 1, padding: '6px 10px', border: `1px solid ${DS.accentBorder}`, borderRadius: 8, fontSize: 12, outline: 'none', boxShadow: '0 0 0 3px rgba(37,99,235,0.08)' }} />
-                  <button onClick={createWatchlist} style={{ padding: '6px 10px', background: DS.accent, border: '1px solid rgba(37,99,235,0.12)', borderRadius: DS.radius, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Create</button>
+                    style={{ flex: 1, padding: '4px 8px', minHeight: 26, border: `1px solid ${DS.accentBorder}`, borderRadius: 6, fontSize: 10, outline: 'none', boxShadow: 'none' }} />
+                  <button onClick={createWatchlist} style={{ padding: '4px 9px', minHeight: 26, background: DS.accent, border: '1px solid rgba(37,99,235,0.12)', borderRadius: 6, color: '#fff', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>Create</button>
                 </div>
               ) : (
                 <button onClick={() => setShowNewWLInput(true)}
-                  style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: DS.accent, fontWeight: 600 }}
+                  style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', minHeight: 30, background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: DS.accent, fontWeight: 600 }}
                   onMouseEnter={e => e.currentTarget.style.background = DS.accentSoft}
                   onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                   <HiOutlinePlus size={13} /> Create New Watchlist
@@ -317,31 +326,31 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
             <>
               <span style={{ fontSize: 11, color: DS.textSub }}>{selectedForDelete.size} selected</span>
               <button onClick={removeSelected} disabled={selectedForDelete.size === 0}
-                style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${DS.redBorder}`, background: selectedForDelete.size > 0 ? DS.redSoft : DS.surfaceHover, color: selectedForDelete.size > 0 ? DS.red : DS.textFaint, fontSize: 12, fontWeight: 600, cursor: selectedForDelete.size > 0 ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 6 }}>
+                style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.redBorder}`, background: selectedForDelete.size > 0 ? DS.redSoft : DS.surfaceHover, color: selectedForDelete.size > 0 ? DS.red : DS.textFaint, fontSize: 11, fontWeight: 600, cursor: selectedForDelete.size > 0 ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <HiOutlineTrash size={13} /> Remove Selected
               </button>
               <button onClick={() => { setEditMode(false); setSelectedForDelete(new Set()) }}
-                style={{ padding: '6px 14px', borderRadius: 8, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                 Done
               </button>
             </>
           ) : (
             <>
               <button onClick={() => setShowAddStocks(true)}
-                style={{ padding: '6px 12px', borderRadius: DS.radius, border: `1px solid ${DS.accent}`, background: DS.accent, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.accent}`, background: DS.accent, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <HiOutlinePlus size={13} /> Add Stocks
               </button>
               <div style={{ width: 1, height: 20, background: DS.border }} />
               <button onClick={() => setEditMode(true)}
-                style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <HiOutlinePencilSquare size={13} /> Edit
               </button>
               <button onClick={() => setShowPersonalise(true)}
-                style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                 Personalise
               </button>
               <button onClick={() => exportXLS(active.name, active.companies, visibleTabs, customViews, FINDATA_TAB_METRICS, ANNUAL_METRIC_GROUPS, {})}
-                style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <HiOutlineArrowDownTray size={13} /> Export All
               </button>
             </>
@@ -353,7 +362,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
       <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, flexShrink: 0, display: 'flex', padding: '0 20px', overflowX: 'auto' }}>
         {visibleTabs.map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            style={{ padding: '10px 14px', background: 'none', border: 'none', borderBottom: activeTab === tab ? `2px solid ${DS.accent}` : '2px solid transparent', color: activeTab === tab ? DS.accent : DS.textSub, fontSize: 12.5, fontWeight: activeTab === tab ? 700 : 400, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'color 0.12s' }}>
+            style={{ padding: '7px 12px', minHeight: 32, background: 'none', border: 'none', borderBottom: activeTab === tab ? `2px solid ${DS.accent}` : '2px solid transparent', color: activeTab === tab ? DS.accent : DS.textSub, fontSize: 11.5, fontWeight: activeTab === tab ? 700 : 500, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'color 0.12s' }}>
             {tab}
           </button>
         ))}
@@ -373,35 +382,35 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ background: DS.surfaceHover, position: 'sticky', top: 0, zIndex: 10 }}>
-                {editMode && <th style={{ width: 32, padding: '8px 0 8px 12px' }} />}
-                <th style={{ padding: '8px 12px', textAlign: 'left', color: DS.textMuted, fontWeight: 600, fontSize: 10.5, whiteSpace: 'nowrap', position: 'sticky', left: editMode ? 32 : 0, background: DS.surfaceHover, minWidth: 160, borderRight: `1px solid ${DS.border}` }}>
+                {editMode && <th style={{ width: 30, padding: '6px 0 6px 10px' }} />}
+                <th style={{ padding: '6px 12px', textAlign: 'left', color: DS.textMuted, fontWeight: 600, fontSize: 10, letterSpacing: '0.04em', whiteSpace: 'nowrap', position: 'sticky', left: editMode ? 30 : 0, background: DS.surfaceHover, minWidth: 150, borderRight: `1px solid ${DS.border}` }}>
                   Company Name ↑↓
                 </th>
-                {finMetrics && finMetrics.map(m => (
-                  <th key={m} style={{ padding: '8px 10px', textAlign: 'right', color: DS.textMuted, fontWeight: 600, fontSize: 10.5, whiteSpace: 'nowrap', background: DS.surfaceHover }}>
+                {visibleFinMetrics && visibleFinMetrics.map(m => (
+                  <th key={m} style={{ padding: '6px 8px', textAlign: 'right', color: DS.textMuted, fontWeight: 600, fontSize: 10, letterSpacing: '0.04em', whiteSpace: 'nowrap', background: DS.surfaceHover }}>
                     {m} ↑↓
                   </th>
                 ))}
                 {mockCols && mockCols.map(m => (
-                  <th key={m} style={{ padding: '8px 10px', textAlign: 'right', color: DS.textMuted, fontWeight: 600, fontSize: 10.5, whiteSpace: 'nowrap', background: DS.surfaceHover }}>
+                  <th key={m} style={{ padding: '6px 8px', textAlign: 'right', color: DS.textMuted, fontWeight: 600, fontSize: 10, letterSpacing: '0.04em', whiteSpace: 'nowrap', background: DS.surfaceHover }}>
                     {m} ↑↓
                   </th>
                 ))}
-                <th style={{ padding: '8px 10px', color: DS.textMuted, fontWeight: 600, fontSize: 10.5, whiteSpace: 'nowrap', background: DS.surfaceHover }}>Sector</th>
+                <th style={{ padding: '6px 8px', color: DS.textMuted, fontWeight: 600, fontSize: 10, letterSpacing: '0.04em', whiteSpace: 'nowrap', background: DS.surfaceHover }}>Sector</th>
               </tr>
             </thead>
             <tbody>
-              {active.companies.map((co) => {
+              {active.companies.map((co, index) => {
                 const data = getAnnualData(co)
                 const yd = (data['2025'] ?? data['2024'] ?? data['2023'] ?? {}) as Record<string, unknown>
                 const isSelected = selectedForDelete.has(co)
                 return (
                   <tr key={co}
-                    style={{ borderBottom: `1px solid ${DS.border}`, background: isSelected ? DS.redSoft : DS.surface, transition: 'background 0.1s' }}
+                    style={{ borderBottom: `1px solid ${DS.border}`, background: isSelected ? DS.redSoft : index % 2 === 0 ? DS.surface : '#fafbff', transition: 'background 0.1s' }}
                     onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = DS.surfaceHover }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isSelected ? DS.redSoft : DS.surface }}>
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isSelected ? DS.redSoft : index % 2 === 0 ? DS.surface : '#fafbff' }}>
                     {editMode && (
-                      <td style={{ padding: '8px 0 8px 12px', width: 32 }}>
+                      <td style={{ padding: '6px 0 6px 10px', width: 30 }}>
                         <input type="checkbox" checked={isSelected}
                           onChange={() => {
                             setSelectedForDelete(prev => {
@@ -410,29 +419,29 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
                               return next
                             })
                           }}
-                          style={{ accentColor: DS.accent, width: 14, height: 14, cursor: 'pointer' }} />
+                          style={{ accentColor: DS.accent, width: 13, height: 13, cursor: 'pointer' }} />
                       </td>
                     )}
-                    <td style={{ padding: '8px 12px', fontWeight: 700, fontSize: 12.5, color: DS.text, whiteSpace: 'nowrap', position: 'sticky', left: editMode ? 32 : 0, background: isSelected ? DS.redSoft : DS.surface, borderRight: `1px solid ${DS.border}` }}>
+                    <td style={{ padding: '6px 12px', fontWeight: 600, fontSize: 11.5, color: DS.text, whiteSpace: 'nowrap', position: 'sticky', left: editMode ? 30 : 0, background: isSelected ? DS.redSoft : index % 2 === 0 ? DS.surface : '#fafbff', borderRight: `1px solid ${DS.border}` }}>
                       {co}
                     </td>
-                    {finMetrics && finMetrics.map(m => {
+                    {visibleFinMetrics && visibleFinMetrics.map(m => {
                       const rawVal = yd[m] as string | number | undefined
                       const numVal = rawVal !== undefined && rawVal !== null && rawVal !== '' ? Number(rawVal) : NaN
                       const isPositive = !isNaN(numVal) && numVal > 0
                       const isNegative = !isNaN(numVal) && numVal < 0
                       return (
-                        <td key={m} style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', color: isPositive ? DS.green : isNegative ? DS.red : yd[m] !== undefined ? DS.text : DS.textFaint }}>
+                        <td key={m} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 11, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', color: isPositive ? DS.green : isNegative ? DS.red : yd[m] !== undefined ? DS.text : DS.textFaint }}>
                           {fmtNum(rawVal)}
                         </td>
                       )
                     })}
                     {mockCols && mockCols.map(m => (
-                      <td key={m} style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <td key={m} style={{ padding: '6px 8px', textAlign: 'right', fontSize: 11, whiteSpace: 'nowrap' }}>
                         {renderMockCell(co, m)}
                       </td>
                     ))}
-                    <td style={{ padding: '8px 10px', fontSize: 10.5, color: DS.textFaint, whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '6px 8px', fontSize: 10, color: DS.textFaint, whiteSpace: 'nowrap' }}>
                       {getSector(co) ?? '—'}
                     </td>
                   </tr>
@@ -448,42 +457,42 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
         <div onClick={() => setShowAddStocks(false)}
           style={{ position: 'fixed', inset: 0, background: DS.overlay, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ background: DS.surface, borderRadius: 12, width: 500, maxHeight: '68vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 20px rgba(15,23,42,0.08), 0 2px 6px rgba(15,23,42,0.04)', overflow: 'hidden' }}>
-            <div style={{ padding: '18px 20px 14px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+            style={{ background: DS.surface, borderRadius: 10, width: 440, maxHeight: '68vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 20px rgba(15,23,42,0.08)', overflow: 'hidden' }}>
+            <div style={{ padding: '12px 14px 10px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: DS.text }}>Add Stocks</div>
-                <div style={{ fontSize: 11, color: DS.textFaint, marginTop: 2 }}>Search and add companies to your watchlist</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: DS.text }}>Add Stocks</div>
+                <div style={{ fontSize: 9, color: DS.textFaint, marginTop: 1 }}>Search and add companies to your watchlist</div>
               </div>
               <button onClick={() => setShowAddStocks(false)}
-                style={{ width: 28, height: 28, borderRadius: 8, background: DS.surfaceHover, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textSub }}>
-                <HiOutlineXMark size={14} />
+                style={{ width: 24, height: 24, borderRadius: 6, background: DS.surfaceHover, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textSub }}>
+                <HiOutlineXMark size={12} />
               </button>
             </div>
-            <div style={{ padding: '12px 20px', borderBottom: `1px solid ${DS.border}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', border: `1px solid ${DS.accentBorder}`, borderRadius: 8, background: DS.surfaceHover, boxShadow: '0 0 0 3px rgba(37,99,235,0.08)' }}>
-                <HiOutlineMagnifyingGlass size={15} color={DS.textFaint} />
-                <input autoFocus value={addSearch} onChange={e => setAddSearch(e.target.value)}
+            <div style={{ padding: '8px 14px', borderBottom: `1px solid ${DS.border}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 9px', border: `1px solid ${DS.border}`, borderRadius: 6, background: DS.surfaceHover, boxShadow: 'none' }}>
+                <HiOutlineMagnifyingGlass size={13} color={DS.textFaint} />
+                <input className="no-focus-glow" autoFocus value={addSearch} onChange={e => setAddSearch(e.target.value)}
                   placeholder="Search & Add Stocks…"
-                  style={{ flex: 1, border: 'none', background: 'none', fontSize: 13, outline: 'none', color: DS.text, fontFamily: 'Inter, sans-serif' }} />
+                  style={{ flex: 1, border: 'none', background: 'none', fontSize: 11, outline: 'none', color: DS.text, fontFamily: 'Inter, sans-serif' }} />
                 {addSearch && <button onClick={() => setAddSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: DS.textFaint, display: 'flex', padding: 0 }}><HiOutlineXMark size={13} /></button>}
               </div>
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              <div style={{ padding: '10px 20px 4px', fontSize: 10, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em' }}>COMPANIES</div>
+              <div style={{ padding: '8px 14px 3px', fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em' }}>COMPANIES</div>
               {filteredAddCos.slice(0, 60).map(co => {
                 const inWL = active.companies.includes(co)
                 return (
                   <div key={co}
-                    style={{ display: 'flex', alignItems: 'center', padding: '11px 20px', borderBottom: `1px solid ${DS.border}`, background: inWL ? DS.accentSoft : DS.surface, transition: 'background 0.1s' }}
+                    style={{ display: 'flex', alignItems: 'center', padding: '6px 14px', margin: '2px 8px', border: `1px solid ${inWL ? DS.accentBorder : DS.border}`, borderRadius: 6, background: inWL ? DS.accentSoft : DS.surface, transition: 'background 0.1s' }}
                     onMouseEnter={e => { if (!inWL) (e.currentTarget as HTMLElement).style.background = DS.surfaceHover }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = inWL ? DS.accentSoft : DS.surface }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: DS.text }}>{co}</div>
-                      <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 2 }}>{getSector(co) ?? ''}</div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: DS.text }}>{co}</div>
+                      <div style={{ fontSize: 9, color: DS.textFaint, marginTop: 1 }}>{getSector(co) ?? ''}</div>
                     </div>
                     <button onClick={() => addCompany(co)} disabled={inWL}
-                      style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: inWL ? DS.greenSoft : DS.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: inWL ? 'default' : 'pointer', transition: 'all 0.12s', flexShrink: 0 }}>
-                      {inWL ? <HiOutlineCheck size={14} color={DS.green} /> : <HiOutlinePlus size={14} color={DS.accent} />}
+                      style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: inWL ? DS.greenSoft : DS.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: inWL ? 'default' : 'pointer', transition: 'all 0.12s', flexShrink: 0 }}>
+                      {inWL ? <HiOutlineCheck size={12} color={DS.green} /> : <HiOutlinePlus size={12} color={DS.accent} />}
                     </button>
                   </div>
                 )
@@ -501,19 +510,19 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
         <div onClick={() => setShowPersonalise(false)}
           style={{ position: 'fixed', inset: 0, background: DS.overlay, zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ background: DS.surface, borderRadius: 14, width: 420, display: 'flex', flexDirection: 'column', boxShadow: '0 8px 24px rgba(15,23,42,0.10), 0 2px 8px rgba(15,23,42,0.06)', overflow: 'hidden' }}>
-            <div style={{ padding: '18px 20px 14px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center' }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: DS.text, flex: 1 }}>Personalise Your View</div>
+            style={{ background: DS.surface, borderRadius: 10, width: 400, display: 'flex', flexDirection: 'column', boxShadow: '0 8px 20px rgba(15,23,42,0.10)', overflow: 'hidden' }}>
+            <div style={{ padding: '12px 14px 10px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: DS.text, flex: 1 }}>Personalise Your View</div>
               <button onClick={() => setShowPersonalise(false)}
-                style={{ width: 28, height: 28, borderRadius: 8, background: DS.surfaceHover, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textSub }}>
-                <HiOutlineXMark size={14} />
+                style={{ width: 24, height: 24, borderRadius: 6, background: DS.surfaceHover, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textSub }}>
+                <HiOutlineXMark size={12} />
               </button>
             </div>
-            <div style={{ padding: '12px 20px 0', maxHeight: '60vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em' }}>VIEWS</span>
+            <div style={{ padding: '9px 14px 0', maxHeight: '60vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em' }}>VIEWS</span>
                 <button onClick={() => { setShowNewView(v => !v); setNewViewGroups([]); setNewViewMetrics([]); setNewViewName('') }}
-                  style={{ padding: '5px 12px', borderRadius: 20, background: '#0f172a', color: '#fff', border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                  style={{ padding: '4px 9px', minHeight: 24, borderRadius: 6, background: '#0f172a', color: '#fff', border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>
                   + Create New View
                 </button>
               </div>
@@ -606,7 +615,8 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 16 }}>
                 {viewOrder.map((view, idx) => (
-                  <div key={view}
+                  <React.Fragment key={view}>
+                  <div
                     draggable
                     onDragStart={() => { dragIdx.current = idx }}
                     onDragOver={e => { e.preventDefault() }}
@@ -621,9 +631,9 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
                       })
                       dragIdx.current = null
                     }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, background: customViews[view] ? DS.accentSoft : DS.surfaceHover, border: `1px solid ${customViews[view] ? DS.accentBorder : DS.border}`, cursor: 'grab', boxShadow: '0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)' }}>
-                    <span style={{ color: DS.accent, fontSize: 16, cursor: 'grab', userSelect: 'none' }}>⋮⋮</span>
-                    <span style={{ flex: 1, fontSize: 13, color: DS.text, fontWeight: 500 }}>{view}</span>
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 8px', minHeight: 30, borderRadius: 6, background: customViews[view] ? DS.accentSoft : DS.surfaceHover, border: `1px solid ${customViews[view] ? DS.accentBorder : DS.border}`, cursor: 'grab', boxShadow: 'none' }}>
+                    <span style={{ color: DS.accent, fontSize: 13, cursor: 'grab', userSelect: 'none' }}>⋮⋮</span>
+                    <span style={{ flex: 1, fontSize: 11, color: DS.text, fontWeight: 500 }}>{view}</span>
                     {customViews[view] && (
                       <span style={{ fontSize: 9, color: DS.accent, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 6, padding: '1px 6px', fontWeight: 600 }}>CUSTOM</span>
                     )}
@@ -632,28 +642,38 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
                       if (next.has(view)) next.delete(view); else next.add(view)
                       return next
                     })}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4, borderRadius: 6, color: hiddenViews.has(view) ? DS.textFaint : DS.accent, transition: 'all 0.12s' }}>
-                      {hiddenViews.has(view) ? <HiOutlineEyeSlash size={16} /> : <HiOutlineEye size={16} />}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 3, borderRadius: 5, color: hiddenViews.has(view) ? DS.textFaint : DS.accent, transition: 'all 0.12s' }}>
+                      {hiddenViews.has(view) ? <HiOutlineEyeSlash size={14} /> : <HiOutlineEye size={14} />}
                     </button>
                     {customViews[view] && (
                       <button onClick={() => {
                         setCustomViews(prev => { const next = { ...prev }; delete next[view]; return next })
                         setViewOrder(prev => prev.filter(v => v !== view))
                         setHiddenViews(prev => { const next = new Set(prev); next.delete(view); return next })
-                      }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4, borderRadius: 6, color: DS.red }}>
-                        <HiOutlineXMark size={14} />
+                      }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 3, borderRadius: 5, color: DS.red }}>
+                        <HiOutlineXMark size={12} />
                       </button>
                     )}
+                    {getViewMetrics(view).length > 0 && <button onClick={() => setExpandedMetricView(expandedMetricView === view ? null : view)} style={{ padding: '2px 6px', borderRadius: 5, border: `1px solid ${DS.border}`, background: expandedMetricView === view ? DS.accentSoft : 'transparent', color: expandedMetricView === view ? DS.accent : DS.textFaint, fontSize: 9, cursor: 'pointer' }}>{expandedMetricView === view ? 'Hide fields' : 'Fields'}</button>}
                   </div>
+                  {expandedMetricView === view && getViewMetrics(view).length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '5px 7px', margin: '2px 0 3px 20px', border: `1px solid ${DS.border}`, borderRadius: 6, background: DS.surface }}>
+                      {getViewMetrics(view).map(metric => {
+                        const isVisible = !hiddenMetricFields[view]?.has(metric)
+                        return <button key={metric} onClick={() => toggleMetricField(view, metric)} style={{ padding: '3px 7px', borderRadius: 6, border: `1px solid ${isVisible ? DS.accentBorder : DS.border}`, background: isVisible ? DS.accentSoft : DS.surfaceHover, color: isVisible ? DS.accent : DS.textFaint, fontSize: 9, cursor: 'pointer', textDecoration: isVisible ? 'none' : 'line-through' }}>{metric}</button>
+                      })}
+                    </div>
+                  )}
+                  </React.Fragment>
                 ))}
               </div>
             </div>
-            <div style={{ padding: '12px 20px 20px', borderTop: `1px solid ${DS.border}` }}>
+            <div style={{ padding: '9px 14px 12px', borderTop: `1px solid ${DS.border}` }}>
               <button onClick={() => {
                 setShowPersonalise(false)
                 if (!visibleTabs.includes(activeTab)) setActiveTab((visibleTabs[0] ?? 'Annual Results'))
               }}
-                style={{ width: '100%', padding: '10px', borderRadius: DS.radius, background: DS.accent, color: '#fff', border: `1px solid ${DS.accent}`, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ width: '100%', padding: '5px 10px', minHeight: 26, borderRadius: 6, background: DS.accent, color: '#fff', border: `1px solid ${DS.accent}`, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                 SAVE CHANGES
               </button>
             </div>

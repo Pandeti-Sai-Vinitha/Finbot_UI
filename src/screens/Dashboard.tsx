@@ -18,6 +18,7 @@ interface Props {
   onUpdateWatchlist: (id: number, patch: Partial<Omit<WatchlistItem, 'id' | 'createdAt'>>) => void
   recentScreenerRuns: { query: string; count: number; runAt: string }[]
   recentChatMessages: string[]
+  onSelectCompany: (company: string) => void
 }
 
 /* ─── Design tokens ─────────────────────────────────────────────── */
@@ -190,7 +191,7 @@ function CompanyFilters({ activeGroup, onGroup, onSelect, sectors }: { activeGro
 
 const TABLE_COLS = 'minmax(160px, 1.5fr) minmax(110px, 1.1fr) repeat(4, minmax(80px, 0.8fr))'
 
-function CompanyTable({ companies, watchlistCompanies, onAddCompany, compact }: { companies: { name: string; sector: string }[]; watchlistCompanies: string[]; onAddCompany: (company: string) => void; compact?: boolean }) {
+function CompanyTable({ companies, watchlistCompanies, onAddCompany, onSelectCompany, compact }: { companies: { name: string; sector: string }[]; watchlistCompanies: string[]; onAddCompany: (company: string) => void; onSelectCompany: (company: string) => void; compact?: boolean }) {
   const pad = compact ? '6px 10px' : '8px 12px'
   return (
     <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -207,7 +208,7 @@ function CompanyTable({ companies, watchlistCompanies, onAddCompany, compact }: 
                 <button onClick={() => onAddCompany(co.name)} disabled={watchlistCompanies.includes(co.name)} title={watchlistCompanies.includes(co.name) ? 'Already in watchlist' : 'Add to watchlist'} style={{ width: 18, height: 18, padding: 0, border: 'none', background: 'transparent', color: watchlistCompanies.includes(co.name) ? DS.green : DS.accent, fontSize: 16, lineHeight: 1, cursor: watchlistCompanies.includes(co.name) ? 'default' : 'pointer', flexShrink: 0 }}>
                   {watchlistCompanies.includes(co.name) ? <HiOutlineCheck size={14} /> : '+'}
                 </button>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{co.name}</span>
+                <button onClick={() => onSelectCompany(co.name)} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', border: 'none', background: 'none', padding: 0, color: DS.text, fontWeight: 700, cursor: 'pointer', textAlign: 'left' }} title={`View ${co.name} details`}>{co.name}</button>
               </div>
               <div style={{ padding: pad, color: DS.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center' }}>{co.sector}</div>
               <div style={{ padding: pad, textAlign: 'right', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>{format(row.Sales, ' Cr')}</div>
@@ -248,7 +249,7 @@ function EmptyState({ icon, text, cta, onCta }: { icon: React.ReactNode; text: s
   )
 }
 
-export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, onUpdateWatchlist, recentScreenerRuns, recentChatMessages }: Props) {
+export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, onUpdateWatchlist, recentScreenerRuns, recentChatMessages, onSelectCompany }: Props) {
   const [activeInsight, setActiveInsight] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [sectorFilter, setSectorFilter] = useState('All')
@@ -330,7 +331,10 @@ export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, o
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: DS.bg, fontFamily: 'Inter, sans-serif' }}>
 
       <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', height: compact ? 42 : 48, padding: `0 ${compact ? 14 : 20}px`, gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', height: 48, padding: '0 20px', gap: 10 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <HiOutlineChartBar size={14} color="#fff" />
+          </div>
           <div>
             <div style={{ fontSize: compact ? 14 : 16, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em', fontFamily: 'Instrument Sans, sans-serif' }}>Dashboard</div>
             <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 1 }}>{greeting} · {dateStr}</div>
@@ -370,7 +374,7 @@ export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, o
             </div>
 
             <div ref={tableAreaRef} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <CompanyTable companies={pageData} watchlistCompanies={watchlistCompanies} onAddCompany={addCompanyToWatchlist} compact={compact} />
+              <CompanyTable companies={pageData} watchlistCompanies={watchlistCompanies} onAddCompany={addCompanyToWatchlist} onSelectCompany={onSelectCompany} compact={compact} />
             </div>
 
             <div style={{ padding: compact ? '6px 10px' : `8px ${padX}px`, display: 'flex', alignItems: 'center', gap: 8, background: DS.surfaceHover, borderTop: `1px solid ${DS.border}`, flexShrink: 0, flexWrap: 'wrap' }}>
@@ -416,7 +420,7 @@ export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, o
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
                       <Avatar name={name} size={compact ? 26 : 28} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: DS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
+                        <button onClick={() => onSelectCompany(name)} style={{ display: 'block', maxWidth: '100%', padding: 0, border: 'none', background: 'none', fontSize: 12, fontWeight: 600, color: DS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textAlign: 'left' }}>{name}</button>
                         <div style={{ fontSize: 10, color: DS.textMuted }}>{CO_SECTOR[name] ?? '—'}</div>
                       </div>
                     </div>

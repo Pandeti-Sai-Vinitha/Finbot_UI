@@ -12,10 +12,13 @@ import AIChat from './AIChat'
 import Admin, { AdminDashboard } from './Admin'
 import Compare from './Compare'
 import Screener from './Screener'
+import CompanyDetail from './CompanyDetail'
 
 interface Props {
   screen: Screen
   navigate: (s: Screen) => void
+  selectedCompany: string
+  onOpenCompany: (company: string) => void
   onBack: () => void
   user: User
   botConfigs: BotConfig[]
@@ -75,7 +78,7 @@ const DS = {
 }
 
 export default function AppShell({
-  screen, navigate, onBack, user,
+  screen, navigate, selectedCompany, onOpenCompany, onBack, user,
   botConfigs, activeBotConfigId, onSetActiveBotConfig,
   onAddBotConfig, onUpdateBotConfig, onDeleteBotConfig,
   watchlists, activeWatchlistId, onAddWatchlist, onUpdateWatchlist, onDeleteWatchlist, onSetActiveWatchlist,
@@ -94,7 +97,7 @@ export default function AppShell({
 
       {/* ── Sidebar ──────────────────────────────────────────────── */}
       <aside style={{
-        width: collapsed ? 56 : 188,
+        width: collapsed ? 52 : 176,
         flexShrink: 0,
         background: DS.surface,
         borderRight: `1px solid ${DS.border}`,
@@ -108,18 +111,18 @@ export default function AppShell({
 
         {/* Logo row */}
         <div style={{
-          height: 56,
+          height: 48,
           display: 'flex',
           alignItems: 'center',
-          padding: collapsed ? '0 9px' : '0 12px',
-          gap: 8,
+          padding: collapsed ? '0 7px' : '0 10px',
+          gap: 7,
           borderBottom: `1px solid ${DS.border}`,
           flexShrink: 0,
           justifyContent: collapsed ? 'center' : 'flex-start',
           background: DS.surface,
         }}>
           <div style={{
-            width: 30, height: 30, borderRadius: DS.radius,
+            width: 28, height: 28, borderRadius: 7,
             background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
@@ -130,7 +133,7 @@ export default function AppShell({
           {!collapsed && (
             <>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em', lineHeight: 1, fontFamily: 'Instrument Sans, sans-serif' }}>FinBot</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em', lineHeight: 1, fontFamily: 'Instrument Sans, sans-serif' }}>FinBot</div>
                 <div style={{ fontSize: 9, color: DS.textFaint, marginTop: 2, letterSpacing: '0.08em', fontWeight: 700, textTransform: 'uppercase' as const }}>
                   {user.role === 'admin' ? 'Admin' : 'Analyst'}
                 </div>
@@ -148,7 +151,7 @@ export default function AppShell({
             onClick={() => setCollapsed(c => !c)}
             title={collapsed ? 'Expand' : 'Collapse'}
             style={{
-              width: 24, height: 24, borderRadius: 7,
+              width: 22, height: 22, borderRadius: 6,
               background: 'transparent',
               border: `1px solid ${DS.border}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -164,7 +167,7 @@ export default function AppShell({
         </div>
 
         {/* Navigation */}
-        <nav style={{ padding: '10px 8px 8px', flexShrink: 0 }}>
+        <nav style={{ padding: '8px 7px 6px', flexShrink: 0 }}>
           {navItems.map(item => {
             const active = screen === item.id
             return (
@@ -177,14 +180,14 @@ export default function AppShell({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: collapsed ? 'center' : 'flex-start',
-                  gap: 8,
-                  padding: collapsed ? '8px 0' : '8px 10px',
-                  borderRadius: DS.radius,
+                  gap: 7,
+                  padding: collapsed ? '7px 0' : '7px 8px',
+                  borderRadius: 7,
                   marginBottom: 2,
                   background: active ? DS.accentSoft : 'transparent',
                   border: `1px solid ${active ? DS.accentBorder : 'transparent'}`,
                   color: active ? DS.accent : DS.textSub,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: active ? 600 : 500,
                   letterSpacing: '-0.01em',
                 }}
@@ -202,7 +205,7 @@ export default function AppShell({
         {!collapsed && user.role !== 'admin' && (
           <>
             <div style={{ height: 1, background: DS.border, margin: '0 10px' }} />
-            <div style={{ padding: '8px 8px 0', flexShrink: 0 }}>
+            <div style={{ padding: '7px 7px 0', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 6px 6px' }}>
                 <span style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
                   Chat History
@@ -218,7 +221,7 @@ export default function AppShell({
                 </button>
               </div>
 
-              <div style={{ height: 180, overflowY: 'auto' }}>
+              <div style={{ height: 160, overflowY: 'auto' }}>
                 {chatSessions.map(sess => {
                   const isActive = sess.id === activeChatId && screen === 'chat'
                   return (
@@ -230,28 +233,28 @@ export default function AppShell({
                         background: isActive ? DS.accentSoft : 'transparent',
                         border: `1px solid ${isActive ? DS.accentBorder : 'transparent'}`,
                         marginBottom: 1,
-                        minHeight: 42,
+                        minHeight: 34,
                       }}
                       onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = DS.hover }}
                       onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
                     >
                       <button
                         onClick={() => onSelectChat(sess.id)}
-                        style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 7, padding: '7px 8px', background: 'none', border: 'none', textAlign: 'left', minWidth: 0 }}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, padding: '5px 7px', background: 'none', border: 'none', textAlign: 'left', minWidth: 0 }}
                       >
                         <HiOutlineChatBubbleLeftRight size={12} color={isActive ? DS.accent : DS.textFaint} style={{ flexShrink: 0 }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 11, color: isActive ? DS.accent : DS.textSub, fontWeight: isActive ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
+                          <div style={{ fontSize: 10, color: isActive ? DS.accent : DS.textSub, fontWeight: isActive ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
                             {sess.title}
                           </div>
-                          <div style={{ fontSize: 9, color: DS.textFaint, lineHeight: 1.3, marginTop: 1 }}>
+                          <div style={{ fontSize: 8, color: DS.textFaint, lineHeight: 1.3, marginTop: 1 }}>
                             {sess.messages.length > 0 ? `${sess.messages.length} msg${sess.messages.length > 1 ? 's' : ''}` : 'Empty'} · {sess.createdAt}
                           </div>
                         </div>
                       </button>
                       <button
                         onClick={() => onDeleteChat(sess.id)}
-                        style={{ width: 20, height: 20, flexShrink: 0, margin: '0 4px', borderRadius: 5, background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'transparent' }}
+                        style={{ width: 18, height: 18, flexShrink: 0, margin: '0 3px', borderRadius: 5, background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'transparent' }}
                         onMouseEnter={e => { e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.background = '#fef2f2' }}
                         onMouseLeave={e => { e.currentTarget.style.color = 'transparent'; e.currentTarget.style.background = 'transparent' }}
                       >
@@ -273,10 +276,10 @@ export default function AppShell({
           {/* Active config chip — analyst only */}
           {!collapsed && user.role !== 'admin' && (
             <div style={{
-              padding: '8px 10px',
+              padding: '6px 8px',
               background: DS.accentSoft,
               border: `1px solid ${DS.accentBorder}`,
-              borderRadius: 8,
+              borderRadius: 7,
               display: 'flex', alignItems: 'center', gap: 7,
             }}>
               <RiSparklingLine size={11} color={DS.accent} style={{ flexShrink: 0 }} />
@@ -315,13 +318,13 @@ export default function AppShell({
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', background: DS.surfaceAlt, border: `1px solid ${DS.border}`, borderRadius: DS.radius }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', background: DS.surfaceAlt, border: `1px solid ${DS.border}`, borderRadius: 7 }}>
               <div style={{ width: 30, height: 30, borderRadius: '50%', background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0, letterSpacing: '-0.02em' }}>
                 {initials}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: DS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>{user.name}</div>
-                <div style={{ fontSize: 10, color: DS.textFaint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: DS.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>{user.name}</div>
+                <div style={{ fontSize: 9, color: DS.textFaint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
               </div>
               <button
                 onClick={onBack}
@@ -347,6 +350,7 @@ export default function AppShell({
             onUpdateWatchlist={onUpdateWatchlist}
             recentScreenerRuns={recentScreenerRuns}
             recentChatMessages={recentChatMessages}
+            onSelectCompany={onOpenCompany}
           />
         )}
         {screen === 'dashboard' && user.role === 'admin' && (
@@ -399,6 +403,9 @@ export default function AppShell({
             onDeleteSavedScreener={onDeleteSavedScreener}
             onRunComplete={onScreenerRun}
           />
+        )}
+        {screen === 'company-detail' && selectedCompany && (
+          <CompanyDetail company={selectedCompany} onBack={() => navigate('dashboard')} />
         )}
       </main>
     </div>

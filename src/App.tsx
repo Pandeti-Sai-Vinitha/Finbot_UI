@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Landing from './screens/Landing'
 import AppShell from './screens/AppShell'
 
-export type Screen = 'dashboard' | 'chat' | 'admin' | 'compare' | 'screener'
+export type Screen = 'dashboard' | 'chat' | 'admin' | 'compare' | 'screener' | 'company-detail'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
@@ -98,6 +98,7 @@ function makeDefaultWatchlist(): WatchlistItem {
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
   const [screen, setScreen] = useState<Screen>('chat')
+  const [selectedCompany, setSelectedCompany] = useState('')
 
   // AI Chat personalization — independent from Watchlist
   const [botConfigs, setBotConfigs] = useState<BotConfig[]>(() => [makeDefaultConfig()])
@@ -119,6 +120,11 @@ export default function App() {
 
   const handleChatMessage = (msg: string) =>
     setRecentChatMessages(prev => [msg, ...prev].slice(0, 5))
+
+  const openCompany = (company: string) => {
+    setSelectedCompany(company)
+    setScreen('company-detail')
+  }
 
   // Chat sessions
   const initSession = (): ChatSession => ({ id: Date.now(), title: 'New Chat', messages: [], createdAt: mkTs() })
@@ -208,6 +214,8 @@ export default function App() {
     <AppShell
       screen={screen}
       navigate={setScreen}
+      selectedCompany={selectedCompany}
+      onOpenCompany={openCompany}
       onBack={goBack}
       user={user}
       botConfigs={botConfigs}
