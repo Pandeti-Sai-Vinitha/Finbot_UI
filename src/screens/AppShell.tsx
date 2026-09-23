@@ -12,7 +12,7 @@ import AIChat from './AIChat'
 import Admin, { AdminDashboard } from './Admin'
 import Compare from './Compare'
 import Screener from './Screener'
-import CompanyDetail from './CompanyDetail'
+import CompanyDetail from './CompanyDetail.tsx'
 
 interface Props {
   screen: Screen
