@@ -131,7 +131,11 @@ export default function App() {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>(() => [initSession()])
   const [activeChatId, setActiveChatId] = useState<number>(chatSessions[0].id)
 
-  const goBack = () => { setUser(null); setScreen('chat') }
+  const goBack = () => {
+    sessionStorage.removeItem('finbot_personalize_coach_seen_v3')
+    setUser(null)
+    setScreen('chat')
+  }
 
   const ts = mkTs
 

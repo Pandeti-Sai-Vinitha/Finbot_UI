@@ -674,7 +674,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
                 if (!visibleTabs.includes(activeTab)) setActiveTab((visibleTabs[0] ?? 'Annual Results'))
               }}
                 style={{ width: '100%', padding: '5px 10px', minHeight: 26, borderRadius: 6, background: DS.accent, color: '#fff', border: `1px solid ${DS.accent}`, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                SAVE CHANGES
+                Save Changes
               </button>
             </div>
           </div>

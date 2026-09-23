@@ -4,8 +4,8 @@ import {
   HiOutlineSparkles, HiOutlineCog6Tooth, HiOutlineXMark, HiOutlinePencilSquare,
   HiOutlineCheck, HiOutlineEye,
   HiOutlineChevronDown, HiOutlineChevronRight,
-  HiOutlineLightBulb, HiOutlineArrowTrendingUp, HiOutlineTrash, HiOutlineTableCells,
-  HiOutlineAdjustmentsHorizontal,
+  HiOutlineLightBulb, HiOutlineArrowTrendingUp, HiOutlineTrash, HiOutlineTableCells, HiOutlineNewspaper,
+  HiOutlineAdjustmentsHorizontal, HiOutlineArrowsPointingOut, HiOutlineArrowsPointingIn,
 } from 'react-icons/hi2'
 import { BsRobot } from 'react-icons/bs'
 import { RiSparklingLine } from 'react-icons/ri'
@@ -99,6 +99,8 @@ const SUGGESTIONS = [
   'Quarterly EPS growth of Infosys FY2025',
   'Cash flow analysis for HDFC Bank vs ICICI Bank',
 ]
+
+const PERSONALIZE_COACH_KEY = 'finbot_personalize_coach_seen_v3'
 
 const DS = {
   bg: '#f4f6f9',
@@ -1216,26 +1218,37 @@ function downloadPDF(rich: RichContent) {
 /* Transposed: metrics as rows, companies as columns */
 function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }) {
   const fmt = (v: unknown) => (v !== undefined && v !== null && v !== '') ? String(v) : '—'
-  const metrics = rich.referenceMetrics.slice(0, 8)
+  const metrics = rich.referenceMetrics
   const companies = rich.referenceCompanies.slice(0, 6)
   const companyData = companies.map(co => {
     const data = getAnnualData(co)
     const yd = (data['2025'] ?? data['2024'] ?? data['2023'] ?? {}) as Record<string, unknown>
     return { co, yd }
   })
+  const [maximized, setMaximized] = useState(false)
+  const [selectedNews, setSelectedNews] = useState<number | null>(null)
+  const newsHeadlines = [
+    `${companies[0]} reports resilient performance in the latest financial year`,
+    `${companies[0]} remains in focus as sector earnings and margins are tracked`,
+    `Analysts review ${companies[0]}'s cash generation and balance sheet strength`,
+  ]
   if (companies.length === 0 || metrics.length === 0) return null
   return (
-    <div style={{ border: `1px solid ${DS.border}`, borderRadius: 12, overflow: 'hidden', background: DS.surface, boxShadow: '0 2px 8px rgba(37,99,235,0.04)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0 }}>
+    <div style={{ border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', background: DS.surface, boxShadow: '0 2px 8px rgba(37,99,235,0.04)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0 }}>
+      <div style={{ border: `1px solid ${DS.border}`, borderRadius: maximized ? 10 : 0, overflow: 'hidden', background: DS.surface, boxShadow: maximized ? '0 18px 48px rgba(15,23,42,0.22)' : 'none', display: 'flex', flexDirection: 'column', position: maximized ? 'fixed' : 'relative', top: maximized ? 24 : undefined, left: maximized ? '50%' : undefined, right: maximized ? 'auto' : undefined, bottom: maximized ? 24 : undefined, width: maximized ? 'calc(100vw - 48px)' : undefined, maxWidth: maximized ? 1200 : undefined, transform: maximized ? 'translateX(-50%)' : undefined, zIndex: maximized ? 500 : undefined }}>
       <div style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', background: '#eef2ff', gap: 8, borderBottom: `1px solid ${DS.accentBorder}` }}>
         <HiOutlineTableCells size={12} color={DS.accent} style={{ flexShrink: 0 }} />
         <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: DS.accent, letterSpacing: '0.06em' }}>REFERENCE DATA</span>
+        <button onClick={() => setMaximized(value => !value)} title={maximized ? 'Restore reference table' : 'Maximize reference table'} aria-label={maximized ? 'Restore reference table' : 'Maximize reference table'} style={{ width: 20, height: 20, borderRadius: 4, background: DS.accentSoft, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textSub, flexShrink: 0 }}>
+          {maximized ? <HiOutlineArrowsPointingIn size={11} /> : <HiOutlineArrowsPointingOut size={11} />}
+        </button>
         {onClose && (
           <button onClick={onClose} style={{ width: 18, height: 18, borderRadius: 4, background: DS.accentSoft, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textSub, flexShrink: 0 }}>
             <HiOutlineXMark size={10} />
           </button>
         )}
       </div>
-      <div style={{ maxWidth: '100%', minHeight: 0, overflowX: 'auto', overflowY: 'auto', maxHeight: 400, overscrollBehavior: 'contain' }}>
+      <div style={{ maxWidth: '100%', minHeight: 0, overflowX: 'auto', overflowY: 'auto', maxHeight: maximized ? 'calc(100vh - 64px)' : 400, overscrollBehavior: 'contain' }}>
         <table style={{ width: 'max-content', minWidth: 650, borderCollapse: 'collapse', fontSize: 11 }}>
           <thead>
             <tr style={{ background: '#f0f4ff' }}>
@@ -1259,6 +1272,33 @@ function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }
           </tbody>
         </table>
       </div>
+      </div>
+        <div style={{ borderTop: `1px solid ${DS.border}`, background: DS.surface }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px 8px', borderBottom: `1px solid ${DS.border}` }}>
+            <div style={{ width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: DS.accentSoft, color: DS.accent }}><HiOutlineNewspaper size={13} /></div>
+            <div>
+              <div style={{ color: DS.text, fontSize: 14, fontWeight: 700 }}>News</div>
+              <div style={{ marginTop: 1, color: DS.textMuted, fontSize: 10 }}>Latest company coverage</div>
+            </div>
+          </div>
+          <div style={{ maxWidth: '100%', maxHeight: 260, overflowX: 'auto', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(220px, 1fr))', minWidth: 660 }}>
+            {newsHeadlines.map((headline, index) => (
+              <button key={headline} onClick={() => setSelectedNews(selectedNews === index ? null : index)} style={{ display: 'block', width: '100%', background: selectedNews === index ? DS.accentSoft : DS.surface, border: 'none', borderRight: index < 2 ? `1px solid ${DS.border}` : 'none', padding: '10px 12px', textAlign: 'left', cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: DS.accent, fontSize: 10, fontWeight: 700 }}><HiOutlineNewspaper size={12} /> MARKET BRIEF</div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginTop: 7 }}><div style={{ color: DS.text, fontSize: 12, fontWeight: 500, lineHeight: 1.4, flex: 1 }}>{headline}</div><HiOutlineChevronRight size={14} color={DS.accent} style={{ flexShrink: 0, marginTop: 2 }} /></div>
+                <div style={{ marginTop: 7, color: DS.textMuted, fontSize: 9 }}>23 Sep 2026 · FinBot Research</div>
+              </button>
+            ))}
+            </div>
+          </div>
+          {selectedNews !== null && (
+            <div style={{ maxHeight: 150, overflowY: 'auto', borderTop: `1px solid ${DS.border}`, padding: '10px 12px', background: DS.surfaceHover }}>
+              <div style={{ color: DS.text, fontSize: 12, fontWeight: 700, marginBottom: 5 }}>Article</div>
+              <div style={{ color: DS.textSub, fontSize: 11, lineHeight: 1.55 }}>{newsHeadlines[selectedNews]} This FinBot Research brief summarizes the latest available company performance, earnings quality, margins, cash generation, and sector context for ongoing review.</div>
+            </div>
+          )}
+        </div>
     </div>
   )
 }
@@ -1278,7 +1318,7 @@ export default function AIChat({
   const [copied, setCopied] = useState<number | null>(null)
   const [showConfig, setShowConfig] = useState(false)
   const [showRef, setShowRef] = useState<number | null>(null)
-  const [showCoach, setShowCoach] = useState(() => !sessionStorage.getItem('finbot_coach_seen'))
+  const [showCoach, setShowCoach] = useState(() => !sessionStorage.getItem(PERSONALIZE_COACH_KEY))
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Register opener so sidebar's personalize button can trigger it
@@ -1366,20 +1406,20 @@ export default function AIChat({
 
             {/* Coach mark */}
             {showCoach && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: 230, background: '#1e293b', borderRadius: 12, padding: '14px 14px 12px', boxShadow: '0 8px 32px rgba(0,0,0,0.22)', zIndex: 200, color: '#fff' }}>
+              <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 238, boxSizing: 'border-box', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, padding: '10px', boxShadow: '0 8px 20px rgba(15,23,42,0.12)', zIndex: 200, color: DS.text }}>
                 {/* Arrow */}
-                <div style={{ position: 'absolute', top: -7, right: 18, width: 14, height: 14, background: '#1e293b', transform: 'rotate(45deg)', borderRadius: 2 }} />
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 10 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <HiOutlinePencilSquare size={14} color="#fff" />
+                <div style={{ position: 'absolute', top: -5, right: 18, width: 10, height: 10, background: DS.surface, borderLeft: `1px solid ${DS.borderMed}`, borderTop: `1px solid ${DS.borderMed}`, transform: 'rotate(45deg)' }} />
+                <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: 6, background: DS.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <HiOutlinePencilSquare size={12} color={DS.accent} />
                   </div>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>Personalize your data</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>Choose the sectors, companies, and metrics you want to focus — or explore with the default config.</div>
+                  <div style={{ flex: 1, minWidth: 0, display: 'block' }}>
+                    <div style={{ display: 'block', fontSize: 11, fontWeight: 700, marginBottom: 3, color: DS.text, whiteSpace: 'normal' }}>Personalize your data</div>
+                    <div style={{ display: 'block', width: '100%', fontSize: 10, color: DS.textSub, lineHeight: 1.45, whiteSpace: 'normal', overflowWrap: 'break-word' }}>Choose sectors, companies, and metrics to focus on, or explore with the default config.</div>
                   </div>
                 </div>
-                <button onClick={() => { sessionStorage.setItem('finbot_coach_seen', '1'); setShowCoach(false) }}
-                  style={{ width: '100%', padding: '7px', background: DS.accent, border: '1px solid rgba(37,99,235,0.12)', borderRadius: DS.radius, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', letterSpacing: '0.01em' }}
+                <button onClick={() => { sessionStorage.setItem(PERSONALIZE_COACH_KEY, '1'); setShowCoach(false) }}
+                  style={{ width: '100%', padding: '6px 8px', background: DS.accent, border: `1px solid ${DS.accent}`, borderRadius: 6, color: '#fff', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}
                 >
                   Got it
                 </button>
@@ -1390,15 +1430,15 @@ export default function AIChat({
       </div>
 
       {/* Messages */}
-      <div style={{ flex: 1, overflow: 'auto', padding: msgs.length === 0 ? '24px 24px 12px' : '20px 24px', position: 'relative', background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37,99,235,0.07), transparent 55%)' }}>
+      <div style={{ flex: 1, overflow: 'auto', padding: msgs.length === 0 ? '12px 16px 8px' : '10px 16px', position: 'relative', background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37,99,235,0.07), transparent 55%)' }}>
         {msgs.length === 0 && (
-          <div style={{ maxWidth: 680, margin: '8vh auto 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg,#2563eb,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 28px rgba(37,99,235,0.28)', marginBottom: 16 }}>
+          <div style={{ maxWidth: 760, margin: '2vh auto 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg,#2563eb,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(37,99,235,0.22)', marginBottom: 10 }}>
               <HiOutlineSparkles size={24} color="#fff" />
             </div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: DS.text, marginBottom: 8, letterSpacing: '-0.03em', fontFamily: 'Instrument Sans, sans-serif', textAlign: 'center' }}>Hello! I&apos;m FinBot.</div>
-            <div style={{ fontSize: 13.5, color: DS.textSub, lineHeight: 1.7, textAlign: 'center', maxWidth: 460, marginBottom: 16 }}>Your AI analytics assistant for Indian equities — theses, comparisons, mandate analysis, and filings-backed insights for NSE/BSE companies.</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginBottom: 22 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: DS.text, marginBottom: 5, letterSpacing: '-0.03em', fontFamily: 'Instrument Sans, sans-serif', textAlign: 'center' }}>Hello! I&apos;m FinBot.</div>
+            <div style={{ fontSize: 12.5, color: DS.textSub, lineHeight: 1.55, textAlign: 'center', maxWidth: 520, marginBottom: 10 }}>Your AI analytics assistant for Indian equities — theses, comparisons, mandate analysis, and filings-backed insights for NSE/BSE companies.</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, justifyContent: 'center', marginBottom: 12 }}>
               {['Analysis', 'Comparisons', 'Investment Thesis', 'Cash Flow', 'Risk'].map(c => (
                 <span key={c} style={{ fontSize: 11, color: DS.accent, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 999, padding: '4px 10px', fontWeight: 600 }}>{c}</span>
               ))}
@@ -1421,17 +1461,17 @@ export default function AIChat({
           </div>
         )}
 
-        <div style={{ maxWidth: showRef !== null ? '100%' : 740, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div style={{ width: '100%', maxWidth: showRef !== null ? '100%' : 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {msgs.map(m => {
             const refOpen = m.role === 'assistant' && showRef === m.id && !!m.rich
             return (
               <div key={m.id} style={{ display: 'flex', gap: 11, flexDirection: m.role === 'user' ? 'row-reverse' : 'row', alignItems: 'flex-start' }}>
-                <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, background: m.role === 'user' ? 'linear-gradient(135deg,#2563eb,#1d4ed8)' : 'linear-gradient(135deg,#312e81,#1e293b)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: m.role === 'user' ? '0 4px 10px rgba(37,99,235,0.22)' : '0 4px 10px rgba(15,23,42,0.18)' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(37,99,235,0.22)' }}>
                   {m.role === 'user' ? <span style={{ fontSize: 11, color: '#fff', fontWeight: 700 }}>U</span> : <BsRobot size={14} color="#fff" />}
                 </div>
                 {/* Split layout when reference is open */}
                 {refOpen ? (
-                  <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                     {/* Left: response + actions */}
                     <div style={{ flex: '0 0 52%', minWidth: 0, overflowY: 'auto', maxHeight: 500 }}>
                       <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: '4px 12px 12px 12px', padding: '12px 14px', boxShadow: '0 1px 4px rgba(37,99,235,0.04)' }}>
@@ -1465,8 +1505,8 @@ export default function AIChat({
                 ) : (
                   <div style={{ flex: 1, minWidth: 0 }}>
                     {m.role === 'user' ? (
-                      <div style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', borderRadius: '16px 16px 4px 16px', padding: '10px 14px', display: 'inline-block', maxWidth: '82%', float: 'right', boxShadow: '0 8px 20px rgba(37,99,235,0.22)' }}>
-                        <div style={{ fontSize: 13, color: '#fff', lineHeight: 1.6 }}>{m.text}</div>
+                      <div style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', borderRadius: '10px 10px 3px 10px', padding: '6px 10px', display: 'inline-block', maxWidth: '72%', float: 'right', boxShadow: '0 3px 10px rgba(37,99,235,0.16)' }}>
+                        <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.45 }}>{m.text}</div>
                       </div>
                     ) : (
                       <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: '4px 16px 16px 16px', padding: '14px 16px', boxShadow: '0 2px 10px rgba(15,23,42,0.04)' }}>
@@ -1521,8 +1561,8 @@ export default function AIChat({
       </div>
 
       {/* Composer */}
-      <div style={{ padding: '8px 20px 12px', flexShrink: 0, background: 'linear-gradient(180deg, rgba(244,246,249,0) 0%, #f4f6f9 28%)' }}>
-        <div style={{ maxWidth: 740, margin: '0 auto', display: 'flex', alignItems: 'flex-end', gap: 8, background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 10, padding: '7px 8px 7px 10px', transition: 'all 0.2s', boxShadow: '0 8px 24px rgba(15,23,42,0.06)' }}
+      <div style={{ padding: '6px 16px 8px', flexShrink: 0, background: 'linear-gradient(180deg, rgba(244,246,249,0) 0%, #f4f6f9 28%)' }}>
+        <div style={{ width: '100%', maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'flex-end', gap: 6, background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, padding: '5px 7px 5px 9px', transition: 'all 0.2s', boxShadow: '0 5px 16px rgba(15,23,42,0.05)' }}
           onFocusCapture={e => { e.currentTarget.style.borderColor = DS.borderMed; e.currentTarget.style.boxShadow = '0 8px 24px rgba(15,23,42,0.06)' }}
           onBlurCapture={e => { e.currentTarget.style.borderColor = DS.borderMed; e.currentTarget.style.boxShadow = '0 8px 24px rgba(15,23,42,0.06)' }}
         >
