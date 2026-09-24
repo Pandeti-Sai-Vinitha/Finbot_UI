@@ -28,6 +28,7 @@ const DS = {
   green: '#16a34a', greenSoft: '#f0fdf4', greenBorder: '#bbf7d0',
   red: '#dc2626', redSoft: '#fef2f2', redBorder: '#fecaca',
   purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.07)',
+  overlay: 'rgba(15,23,42,0.45)',
   shadow: 'none',
   radius: 10,
 }

@@ -1214,6 +1214,35 @@ function downloadPDF(rich: RichContent) {
   w.onload = () => { w.focus(); w.print() }
 }
 
+function downloadInvestorDeck(company: string, quarter: string) {
+  const lines = [
+    `${company} ${quarter} Investor Presentation`,
+    'FinBot Research | Investor briefing',
+    '',
+    'This investor presentation is part of the reference data set and should be reviewed alongside the primary filings.',
+  ]
+  const escapePdf = (value: string) => value.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)')
+  const content = ['BT', '/F1 16 Tf', '50 760 Td', ...lines.flatMap((line, index) => [index === 0 ? `(${escapePdf(line)}) Tj` : `0 -24 Td (${escapePdf(line)}) Tj`]), 'ET'].join('\n')
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
+    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ]
+  let pdf = '%PDF-1.4\n'
+  const offsets: number[] = []
+  objects.forEach((object, index) => { offsets[index + 1] = pdf.length; pdf += `${index + 1} 0 obj\n${object}\nendobj\n` })
+  const xref = pdf.length
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map(offset => `${String(offset).padStart(10, '0')} 00000 n `).join('\n')}\ntrailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`
+  const url = URL.createObjectURL(new Blob([pdf], { type: 'application/pdf' }))
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `${company.replace(/[^a-z0-9]+/gi, '_')}_${quarter.replace(/\s+/g, '_')}_Investor_Presentation.pdf`
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
+
 /* ─── Reference table ───────────────────────────────────────────── */
 /* Transposed: metrics as rows, companies as columns */
 function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }) {
@@ -1226,12 +1255,25 @@ function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }
     return { co, yd }
   })
   const [maximized, setMaximized] = useState(false)
-  const [selectedNews, setSelectedNews] = useState<number | null>(null)
+  const [selectedNews, setSelectedNews] = useState<{ title: string; summary: string; date: string } | null>(null)
   const newsHeadlines = [
-    `${companies[0]} reports resilient performance in the latest financial year`,
-    `${companies[0]} remains in focus as sector earnings and margins are tracked`,
-    `Analysts review ${companies[0]}'s cash generation and balance sheet strength`,
+    {
+      title: `${companies[0]} reports resilient performance in the latest financial year`,
+      summary: `${companies[0]} continues to show consistent earnings quality, stable operating margins, and disciplined cash generation across the latest reporting periods.`,
+      date: '23 Sep 2026',
+    },
+    {
+      title: `${companies[0]} remains in focus as sector earnings and margins are tracked`,
+      summary: `The market is monitoring ${companies[0]}'s operating leverage, working-capital discipline, and relative earnings quality against sector peers.`,
+      date: '21 Sep 2026',
+    },
+    {
+      title: `Analysts review ${companies[0]}'s cash generation and balance sheet strength`,
+      summary: `Investors are focusing on the resilience of ${companies[0]}'s balance sheet, asset efficiency, and consistency of cash conversion in the current cycle.`,
+      date: '18 Sep 2026',
+    },
   ]
+  const investorPresentations = ['Q1 FY2025', 'Q2 FY2025', 'Q3 FY2025', 'Q4 FY2025']
   if (companies.length === 0 || metrics.length === 0) return null
   return (
     <div style={{ border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', background: DS.surface, boxShadow: '0 2px 8px rgba(37,99,235,0.04)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0 }}>
@@ -1283,21 +1325,50 @@ function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }
           </div>
           <div style={{ maxWidth: '100%', maxHeight: 260, overflowX: 'auto', overflowY: 'auto', overscrollBehavior: 'contain' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(220px, 1fr))', minWidth: 660 }}>
-            {newsHeadlines.map((headline, index) => (
-              <button key={headline} onClick={() => setSelectedNews(selectedNews === index ? null : index)} style={{ display: 'block', width: '100%', background: selectedNews === index ? DS.accentSoft : DS.surface, border: 'none', borderRight: index < 2 ? `1px solid ${DS.border}` : 'none', padding: '10px 12px', textAlign: 'left', cursor: 'pointer' }}>
+            {newsHeadlines.map((story, index) => (
+              <button key={story.title} onClick={() => setSelectedNews(selectedNews && selectedNews.title === story.title ? null : story)} style={{ display: 'block', width: '100%', background: selectedNews?.title === story.title ? DS.accentSoft : DS.surface, border: 'none', borderRight: index < 2 ? `1px solid ${DS.border}` : 'none', padding: '10px 12px', textAlign: 'left', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: DS.accent, fontSize: 10, fontWeight: 700 }}><HiOutlineNewspaper size={12} /> MARKET BRIEF</div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginTop: 7 }}><div style={{ color: DS.text, fontSize: 12, fontWeight: 500, lineHeight: 1.4, flex: 1 }}>{headline}</div><HiOutlineChevronRight size={14} color={DS.accent} style={{ flexShrink: 0, marginTop: 2 }} /></div>
-                <div style={{ marginTop: 7, color: DS.textMuted, fontSize: 9 }}>23 Sep 2026 · FinBot Research</div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginTop: 7 }}><div style={{ color: DS.text, fontSize: 12, fontWeight: 500, lineHeight: 1.4, flex: 1 }}>{story.title}</div><HiOutlineChevronRight size={14} color={DS.accent} style={{ flexShrink: 0, marginTop: 2 }} /></div>
+                <div style={{ marginTop: 7, color: DS.textMuted, fontSize: 9 }}>{story.date} · FinBot Research</div>
               </button>
             ))}
             </div>
           </div>
           {selectedNews !== null && (
-            <div style={{ maxHeight: 150, overflowY: 'auto', borderTop: `1px solid ${DS.border}`, padding: '10px 12px', background: DS.surfaceHover }}>
-              <div style={{ color: DS.text, fontSize: 12, fontWeight: 700, marginBottom: 5 }}>Article</div>
-              <div style={{ color: DS.textSub, fontSize: 11, lineHeight: 1.55 }}>{newsHeadlines[selectedNews]} This FinBot Research brief summarizes the latest available company performance, earnings quality, margins, cash generation, and sector context for ongoing review.</div>
+            <div onClick={() => setSelectedNews(null)} style={{ position: 'fixed', inset: 0, background: DS.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600, padding: 16 }}>
+              <div onClick={event => event.stopPropagation()} style={{ width: 'min(560px, 92vw)', background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 12, boxShadow: '0 18px 45px rgba(15,23,42,0.18)', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: '#eef2ff', borderBottom: `1px solid ${DS.accentBorder}` }}>
+                  <div style={{ width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: DS.accentSoft, color: DS.accent }}><HiOutlineNewspaper size={13} /></div>
+                  <div style={{ flex: 1, color: DS.accent, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>NEWS ARTICLE</div>
+                  <button onClick={() => setSelectedNews(null)} style={{ width: 18, height: 18, borderRadius: 4, background: DS.accentSoft, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textSub, flexShrink: 0, fontSize: 12 }}>×</button>
+                </div>
+                <div style={{ padding: 16 }}>
+                  <div style={{ color: DS.textMuted, fontSize: 10, marginBottom: 8 }}>{selectedNews.date} · FinBot Research</div>
+                  <div style={{ color: DS.text, fontSize: 18, fontWeight: 700, lineHeight: 1.35, marginBottom: 10 }}>{selectedNews.title}</div>
+                  <div style={{ color: DS.textSub, fontSize: 12, lineHeight: 1.75 }}>{selectedNews.summary}</div>
+                </div>
+              </div>
             </div>
           )}
+          <div style={{ borderTop: `1px solid ${DS.border}`, background: DS.surfaceHover, padding: '10px 12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+              <div style={{ color: DS.text, fontSize: 12, fontWeight: 700 }}>Investor presentations</div>
+              <div style={{ color: DS.textMuted, fontSize: 10 }}>{investorPresentations.length} available</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
+              {investorPresentations.map(doc => (
+                <div key={doc} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 8, padding: '8px 9px' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: DS.text, fontSize: 10, fontWeight: 700 }}>{doc}</div>
+                    <div style={{ color: DS.textMuted, fontSize: 9 }}>PDF download</div>
+                  </div>
+                  <button onClick={() => downloadInvestorDeck(companies[0], doc)} style={{ border: `1px solid ${DS.accentBorder}`, borderRadius: 5, background: DS.accentSoft, color: DS.accent, padding: '4px 7px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>
+                    Download
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
     </div>
   )
