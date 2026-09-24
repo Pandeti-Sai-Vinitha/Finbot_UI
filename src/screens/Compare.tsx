@@ -196,12 +196,6 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
   const dragIdx = useRef<number | null>(null)
   const [customViews, setCustomViews] = useState<Record<string, string[]>>({})
 
-  /* Create New View state */
-  const [showNewView, setShowNewView] = useState(false)
-  const [newViewGroups, setNewViewGroups] = useState<string[]>([])
-  const [newViewMetrics, setNewViewMetrics] = useState<string[]>([])
-  const [newViewName, setNewViewName] = useState('')
-
   const visibleTabs = viewOrder.filter(v => !hiddenViews.has(v))
 
   useEffect(() => {
@@ -519,99 +513,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
               </button>
             </div>
             <div style={{ padding: '9px 14px 0', maxHeight: '60vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em' }}>VIEWS</span>
-                <button onClick={() => { setShowNewView(v => !v); setNewViewGroups([]); setNewViewMetrics([]); setNewViewName('') }}
-                  style={{ padding: '4px 9px', minHeight: 24, borderRadius: 6, background: '#0f172a', color: '#fff', border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>
-                  + Create New View
-                </button>
-              </div>
-
-              {/* Create New View form — multi-select groups */}
-              {showNewView && (() => {
-                const allGroupMetrics = newViewGroups.flatMap(g => ANNUAL_METRIC_GROUPS[g] ?? [])
-                const uniqueGroupMetrics = Array.from(new Set(allGroupMetrics))
-                return (
-                  <div style={{ background: DS.surfaceHover, border: `1px solid ${DS.accentBorder}`, borderRadius: 12, padding: '14px 14px 12px', marginBottom: 12 }}>
-                    {/* Step 1: multi-select groups */}
-                    <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 8 }}>1 — METRIC GROUPS <span style={{ color: DS.accent }}>({newViewGroups.length} selected)</span></div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-                      {Object.keys(ANNUAL_METRIC_GROUPS).map(g => {
-                        const sel = newViewGroups.includes(g)
-                        const count = ANNUAL_METRIC_GROUPS[g]?.length ?? 0
-                        return (
-                          <button key={g} onClick={() => {
-                            setNewViewGroups(prev => sel ? prev.filter(x => x !== g) : [...prev, g])
-                            if (!sel) {
-                              setNewViewMetrics(prev => Array.from(new Set([...prev, ...(ANNUAL_METRIC_GROUPS[g] ?? [])])))
-                            } else {
-                              const toRemove = new Set(ANNUAL_METRIC_GROUPS[g] ?? [])
-                              setNewViewMetrics(prev => prev.filter(m => !toRemove.has(m)))
-                            }
-                          }}
-                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 6, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, background: sel ? DS.accentSoft : DS.surface, color: sel ? DS.accent : DS.textSub, fontSize: 11, fontWeight: sel ? 700 : 400, cursor: 'pointer', transition: 'all 0.12s' }}
-                            onMouseEnter={e => { if (!sel) { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.color = DS.accent } }}
-                            onMouseLeave={e => { if (!sel) { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.color = DS.textSub } }}>
-                            {sel && <HiOutlineCheck size={10} />}
-                            {g}
-                            <span style={{ fontSize: 9, color: sel ? DS.accent : DS.textFaint }}>{count}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-
-                    {/* Step 2: metrics from selected groups — immediately visible */}
-                    {newViewGroups.length > 0 && (
-                      <>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 6 }}>
-                          2 — METRICS <span style={{ color: DS.accent }}>({newViewMetrics.length} selected)</span>
-                          <button onClick={() => setNewViewMetrics(uniqueGroupMetrics)} style={{ marginLeft: 8, fontSize: 9, padding: '1px 6px', borderRadius: 4, border: `1px solid ${DS.accentBorder}`, background: 'transparent', color: DS.accent, cursor: 'pointer', fontWeight: 600 }}>All</button>
-                          <button onClick={() => setNewViewMetrics([])} style={{ marginLeft: 4, fontSize: 9, padding: '1px 6px', borderRadius: 4, border: `1px solid ${DS.border}`, background: 'transparent', color: DS.textSub, cursor: 'pointer', fontWeight: 600 }}>None</button>
-                        </div>
-                        <div style={{ maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 10 }}>
-                          {newViewGroups.map(grp => (
-                            <div key={grp}>
-                              <div style={{ fontSize: 9, color: DS.textFaint, letterSpacing: '0.06em', padding: '4px 0 2px', fontWeight: 700 }}>{grp.toUpperCase()}</div>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                {(ANNUAL_METRIC_GROUPS[grp] ?? []).map(m => {
-                                  const sel = newViewMetrics.includes(m)
-                                  return (
-                                    <button key={m} onClick={() => setNewViewMetrics(prev => sel ? prev.filter(x => x !== m) : [...prev, m])}
-                                      style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 6, border: `1px solid ${sel ? DS.accentBorder : DS.border}`, background: sel ? DS.accentSoft : DS.surface, color: sel ? DS.accent : DS.textSub, fontSize: 10, fontWeight: sel ? 600 : 400, cursor: 'pointer', transition: 'all 0.1s' }}>
-                                      {sel && <HiOutlineCheck size={8} />}{m}
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-
-                    {/* View name + save */}
-                    <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 6 }}>3 — VIEW NAME</div>
-                    <input value={newViewName} onChange={e => setNewViewName(e.target.value)}
-                      placeholder={newViewGroups.length > 0 ? newViewGroups[0] : 'Custom View'}
-                      style={{ width: '100%', padding: '7px 10px', border: `1px solid ${DS.border}`, borderRadius: 8, fontSize: 12, color: DS.text, background: DS.surface, outline: 'none', boxSizing: 'border-box', marginBottom: 10 }}
-                      onFocus={e => { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.08)' }}
-                      onBlur={e => { e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.boxShadow = 'none' }} />
-                    <button
-                      onClick={() => {
-                        const name = newViewName.trim() || (newViewGroups[0] ?? 'Custom View')
-                        if (!name || newViewMetrics.length === 0) return
-                        setCustomViews(prev => ({ ...prev, [name]: newViewMetrics }))
-                        setViewOrder(prev => [...prev, name])
-                        setActiveTab(name)
-                        setShowNewView(false); setNewViewGroups([]); setNewViewMetrics([]); setNewViewName('')
-                      }}
-                      disabled={newViewMetrics.length === 0}
-                      style={{ width: '100%', padding: '9px', borderRadius: 8, border: 'none', background: newViewMetrics.length > 0 ? DS.accent : '#e2e8f0', color: newViewMetrics.length > 0 ? '#fff' : DS.textFaint, fontSize: 12, fontWeight: 700, cursor: newViewMetrics.length > 0 ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxShadow: newViewMetrics.length > 0 ? '0 2px 10px rgba(37,99,235,0.25)' : 'none' }}>
-                      Save View ({newViewMetrics.length} metrics)
-                    </button>
-                  </div>
-                )
-              })()}
+              <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 7 }}>VIEWS</div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 16 }}>
                 {viewOrder.map((view, idx) => (
