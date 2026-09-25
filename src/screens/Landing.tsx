@@ -152,22 +152,22 @@ export default function Landing({ onLogin }: Props) {
       </div>
 
       {/* Nav */}
-      <nav style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 40px', background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <nav style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 28px', background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ width: 24, height: 24, borderRadius: 6, background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <RiSparklingLine size={14} color="#fff" />
           </div>
-          <span style={{ fontSize: 16, fontWeight: 700, color: C.text, fontFamily: 'Instrument Sans, sans-serif', letterSpacing: '-0.02em' }}>FinBot</span>
-          <span style={{ fontSize: 9, color: C.textFaint, letterSpacing: '0.08em', fontWeight: 600 }}>BETA</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: 'Instrument Sans, sans-serif', letterSpacing: '-0.02em' }}>FinBot</span>
+          <span style={{ fontSize: 8, color: C.textFaint, letterSpacing: '0.08em', fontWeight: 600 }}>BETA</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           <button onClick={() => setMode('login')}
-            style={{ padding: '7px 14px', background: 'transparent', border: 'none', borderRadius: 8, color: C.textSub, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+            style={{ padding: '5px 9px', background: 'transparent', border: 'none', borderRadius: 6, color: C.textSub, fontSize: 11.5, fontWeight: 500, cursor: 'pointer' }}
             onMouseEnter={e => { e.currentTarget.style.color = C.text }}
             onMouseLeave={e => { e.currentTarget.style.color = C.textSub }}
           >Sign In</button>
           <button onClick={() => setMode('register')}
-            style={{ padding: '7px 14px', background: C.accent, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+            style={{ padding: '5px 10px', background: C.accent, border: 'none', borderRadius: 6, color: '#fff', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' }}
             onMouseEnter={e => { e.currentTarget.style.background = C.accentDark }}
             onMouseLeave={e => { e.currentTarget.style.background = C.accent }}
           >Get Started</button>
@@ -257,9 +257,9 @@ export default function Landing({ onLogin }: Props) {
       {mode && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(4px)' }} onClick={() => setMode(null)} />
-          <div style={{ position: 'relative', width: '100%', maxWidth: 360, background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: 'none', overflow: 'hidden' }}>
-            <button onClick={() => setMode(null)} style={{ position: 'absolute', top: 16, right: 16, width: 28, height: 28, borderRadius: '50%', background: '#f1f5f9', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', cursor: 'pointer', zIndex: 10 }}>
-              <HiOutlineXMark size={16} />
+          <div style={{ position: 'relative', width: '100%', maxWidth: 340, background: '#fff', borderRadius: 10, border: '1px solid #e2e8f0', boxShadow: 'none', overflow: 'hidden' }}>
+            <button onClick={() => setMode(null)} style={{ position: 'absolute', top: 12, right: 12, width: 24, height: 24, borderRadius: 6, background: '#f1f5f9', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', cursor: 'pointer', zIndex: 10 }}>
+              <HiOutlineXMark size={14} />
             </button>
             {mode === 'login' && <LoginForm role={role} onRoleChange={setRole} onLogin={onLogin} onRegister={() => setMode('register')} onForgot={() => setMode('forgot')} />}
             {mode === 'register' && <RegisterForm role={role} onRoleChange={setRole} onLogin={onLogin} onSignIn={() => setMode('login')} />}
@@ -277,9 +277,9 @@ export default function Landing({ onLogin }: Props) {
 
 function ModalHeader({ title, sub }: { title: string; sub: string }) {
   return (
-    <div style={{ padding: '22px 22px 0' }}>
-      <div style={{ fontSize: 18, fontWeight: 600, color: C.text, fontFamily: 'Instrument Sans, sans-serif', letterSpacing: '-0.02em', lineHeight: 1.25 }}>{title}</div>
-      <div style={{ fontSize: 12.5, color: C.textSub, marginTop: 5, lineHeight: 1.45 }}>{sub}</div>
+    <div style={{ padding: '16px 18px 0' }}>
+      <div style={{ fontSize: 16, fontWeight: 600, color: C.text, fontFamily: 'Instrument Sans, sans-serif', letterSpacing: '-0.02em', lineHeight: 1.25 }}>{title}</div>
+      <div style={{ fontSize: 11, color: C.textSub, marginTop: 3, lineHeight: 1.4 }}>{sub}</div>
     </div>
   )
 }
@@ -295,15 +295,15 @@ function Field({ label, type, value, onChange, placeholder, icon, error }: {
   const shadow = focused && !error ? '0 0 0 3px rgba(37,99,235,0.08)' : 'none'
   return (
     <div>
-      <label style={{ fontSize: 11, fontWeight: 500, color: error ? C.red : C.textSub, display: 'block', marginBottom: 6 }}>{label.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase())}</label>
+      <label style={{ fontSize: 10, fontWeight: 500, color: error ? C.red : C.textSub, display: 'block', marginBottom: 4 }}>{label.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase())}</label>
       <div style={{ position: 'relative' }}>
-        <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: error ? C.red : focused ? C.accent : C.textFaint, display: 'flex', transition: 'color 0.15s' }}>{icon}</span>
+        <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: error ? C.red : focused ? C.accent : C.textFaint, display: 'flex', transition: 'color 0.15s' }}>{icon}</span>
         <input
           type={isPass && show ? 'text' : type}
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          style={{ width: '100%', padding: '7px 28px', border: `1px solid ${borderColor}`, borderRadius: 8, fontSize: 12, color: C.text, background: error ? C.redSoft : '#fff', outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', boxShadow: 'none', transition: 'border-color 0.15s, box-shadow 0.15s', height: 34 }}
+          style={{ width: '100%', padding: '6px 26px', border: `1px solid ${borderColor}`, borderRadius: 6, fontSize: 11, color: C.text, background: error ? C.redSoft : '#fff', outline: 'none', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box', boxShadow: 'none', transition: 'border-color 0.15s, box-shadow 0.15s', height: 30 }}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
         />
@@ -311,7 +311,7 @@ function Field({ label, type, value, onChange, placeholder, icon, error }: {
           <button onClick={() => setShow(s => !s)} type="button" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: C.textFaint, display: 'flex', padding: 0 }}
             onMouseEnter={e => e.currentTarget.style.color = C.text}
             onMouseLeave={e => e.currentTarget.style.color = C.textFaint}>
-            {show ? <HiOutlineEyeSlash size={15} /> : <HiOutlineEye size={15} />}
+            {show ? <HiOutlineEyeSlash size={13} /> : <HiOutlineEye size={13} />}
           </button>
         )}
       </div>
@@ -325,7 +325,7 @@ function PrimaryBtn({ label, onClick, loading }: { label: string; onClick: () =>
     <button
       onClick={onClick}
       disabled={loading}
-      style={{ width: '100%', padding: '6px 12px', background: loading ? '#93c5fd' : 'rgba(37,99,235,0.08)', color: C.accent, border: `1px solid rgba(37,99,235,0.18)`, borderRadius: 8, fontSize: 12, fontWeight: 600, letterSpacing: '-0.01em', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 34, boxShadow: 'none' }}
+      style={{ width: '100%', padding: '5px 10px', background: loading ? '#93c5fd' : 'rgba(37,99,235,0.08)', color: C.accent, border: `1px solid rgba(37,99,235,0.18)`, borderRadius: 6, fontSize: 11, fontWeight: 600, letterSpacing: '-0.01em', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, height: 30, boxShadow: 'none' }}
       onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = 'rgba(37,99,235,0.12)' } }}
       onMouseLeave={e => { if (!loading) { e.currentTarget.style.background = 'rgba(37,99,235,0.08)' } }}
     >
@@ -362,13 +362,13 @@ function RoleTabs({ role, onChange }: { role: UserRole; onChange: (r: UserRole) 
     { id: 'analyst', label: 'Analyst', IconC: HiOutlinePresentationChartLine },
   ]
   return (
-    <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, margin: '16px 22px 0' }}>
+    <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, margin: '12px 18px 0' }}>
       {tabs.map(t => {
         const active = role === t.id
         return (
           <button key={t.id} onClick={() => onChange(t.id)}
-            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '10px 8px', border: 'none', borderBottom: active ? `2px solid ${C.accent}` : '2px solid transparent', background: 'transparent', color: active ? C.accent : C.textSub, fontSize: 12, fontWeight: active ? 600 : 500, marginBottom: -1, transition: 'color 0.15s', fontFamily: 'Instrument Sans, sans-serif' }}>
-            <t.IconC size={13} color={active ? C.accent : C.textFaint} />
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '7px 6px', border: 'none', borderBottom: active ? `2px solid ${C.accent}` : '2px solid transparent', background: 'transparent', color: active ? C.accent : C.textSub, fontSize: 11, fontWeight: active ? 600 : 500, marginBottom: -1, transition: 'color 0.15s', fontFamily: 'Instrument Sans, sans-serif' }}>
+            <t.IconC size={12} color={active ? C.accent : C.textFaint} />
             {t.label}
           </button>
         )
@@ -399,21 +399,21 @@ function LoginForm({ role, onRoleChange, onLogin, onRegister, onForgot }: { role
     <div>
       <ModalHeader title="Sign in" sub="Enter your credentials to continue" />
       <RoleTabs role={role} onChange={r => { onRoleChange(r); setError('') }} />
-      <div style={{ padding: '18px 22px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ padding: '14px 18px 18px', display: 'flex', flexDirection: 'column', gap: 9 }}>
         <Field label="Email address" type="email" value={email} onChange={setEmail} placeholder="you@example.com" icon={<HiOutlineEnvelope size={15} />} />
         <Field label="Password" type="password" value={pass} onChange={setPass} placeholder="Your password" icon={<HiOutlineLockClosed size={15} />} />
         {error && <div style={{ fontSize: 12, color: C.red, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, padding: '8px 12px', lineHeight: 1.5 }}>{error}</div>}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -4 }}>
-          <button onClick={onForgot} style={{ background: 'none', border: 'none', color: C.textMuted, fontSize: 12, fontWeight: 500, padding: 0 }}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -3 }}>
+          <button onClick={onForgot} style={{ background: 'none', border: 'none', color: C.textMuted, fontSize: 11, fontWeight: 500, padding: 0 }}
             onMouseEnter={e => e.currentTarget.style.color = C.accent}
             onMouseLeave={e => e.currentTarget.style.color = C.textMuted}>
             Forgot password?
           </button>
         </div>
         <PrimaryBtn label="Sign in" onClick={submit} loading={loading} />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 4, fontSize: 12.5, color: C.textSub }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, paddingTop: 2, fontSize: 11, color: C.textSub }}>
           No account?
-          <button onClick={onRegister} style={{ background: 'none', border: 'none', color: C.accent, fontWeight: 500, fontSize: 12.5, padding: 0 }}
+          <button onClick={onRegister} style={{ background: 'none', border: 'none', color: C.accent, fontWeight: 500, fontSize: 11, padding: 0 }}
             onMouseEnter={e => e.currentTarget.style.color = C.accentDark}
             onMouseLeave={e => e.currentTarget.style.color = C.accent}>Create one free</button>
         </div>
@@ -451,16 +451,16 @@ function RegisterForm({ role, onRoleChange, onLogin, onSignIn }: { role: UserRol
     <div>
       <ModalHeader title="Create a free account" sub="Choose your role and get started" />
       <RoleTabs role={role} onChange={onRoleChange} />
-      <div style={{ padding: '18px 22px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ padding: '14px 18px 18px', display: 'flex', flexDirection: 'column', gap: 9 }}>
         <Field label="Full name" type="text" value={name} onChange={setName} placeholder="Arjun Sharma" icon={<HiOutlineUser size={15} />} error={errors.name} />
         <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" icon={<HiOutlineEnvelope size={15} />} error={errors.email} />
         <Field label="Password" type="password" value={pass} onChange={setPass} placeholder="Min. 6 characters" icon={<HiOutlineLockClosed size={15} />} error={errors.pass} />
         <Field label="Confirm password" type="password" value={confirm} onChange={setConfirm} placeholder="Repeat password" icon={<HiOutlineLockClosed size={15} />} error={errors.confirm} />
         <PasswordStrength pass={pass} />
         <PrimaryBtn label="Create account" onClick={submit} loading={loading} />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 4, fontSize: 12.5, color: C.textSub }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, paddingTop: 2, fontSize: 11, color: C.textSub }}>
           Already have an account?
-          <button onClick={onSignIn} style={{ background: 'none', border: 'none', color: C.accent, fontWeight: 500, cursor: 'pointer', fontSize: 12.5, padding: 0 }}>Sign in</button>
+          <button onClick={onSignIn} style={{ background: 'none', border: 'none', color: C.accent, fontWeight: 500, cursor: 'pointer', fontSize: 11, padding: 0 }}>Sign in</button>
         </div>
       </div>
     </div>

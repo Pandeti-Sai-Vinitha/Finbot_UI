@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
 import {
-  HiOutlineChevronDown, HiOutlineArrowDownTray, HiOutlineXMark,
+  HiOutlineChevronDown, HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineArrowDownTray, HiOutlineXMark,
   HiOutlineMagnifyingGlass, HiOutlineCheck, HiOutlinePlus,
   HiOutlineTrash, HiOutlineBookmark, HiOutlinePencilSquare,
   HiOutlineEye, HiOutlineEyeSlash,
@@ -195,8 +195,28 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
   const [hiddenMetricFields, setHiddenMetricFields] = useState<Record<string, Set<string>>>({})
   const dragIdx = useRef<number | null>(null)
   const [customViews, setCustomViews] = useState<Record<string, string[]>>({})
+  const tableViewportRef = useRef<HTMLDivElement>(null)
+  const [rowsPerPage, setRowsPerPage] = useState(Number.MAX_SAFE_INTEGER)
+  const [tablePage, setTablePage] = useState(1)
 
   const visibleTabs = viewOrder.filter(v => !hiddenViews.has(v))
+
+  useEffect(() => {
+    const element = tableViewportRef.current
+    if (!element) return
+    const measureRows = () => {
+      const headerHeight = 30
+      const rowHeight = 30
+      const availableHeight = element.clientHeight - headerHeight
+      setRowsPerPage(Math.max(1, Math.floor(availableHeight / rowHeight)))
+    }
+    const observer = new ResizeObserver(measureRows)
+    observer.observe(element)
+    measureRows()
+    return () => observer.disconnect()
+  }, [activeTab, visibleTabs.length])
+
+  useEffect(() => { setTablePage(1) }, [activeTab, active?.id, active?.companies.length])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -251,6 +271,11 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
     return []
   }
   const visibleFinMetrics = finMetrics?.filter(metric => !hiddenMetricFields[activeTab]?.has(metric))
+  const pageCount = Math.max(1, Math.ceil(active.companies.length / rowsPerPage))
+  const safeTablePage = Math.min(tablePage, pageCount)
+  const visibleCompanies = pageCount > 1
+    ? active.companies.slice((safeTablePage - 1) * rowsPerPage, safeTablePage * rowsPerPage)
+    : active.companies
   const toggleMetricField = (view: string, metric: string) => {
     setHiddenMetricFields(prev => {
       const next = new Set(prev[view] ?? [])
@@ -266,9 +291,6 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
       <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, flexShrink: 0, padding: '0 20px', display: 'flex', alignItems: 'center', height: 48, gap: 10 }}>
         {/* Watchlist title + dropdown */}
         <div ref={wlDropRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <HiOutlineBookmark size={13} color="#fff" />
-          </div>
           <button onClick={() => setShowWLDropdown(v => !v)}
             style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'Inter, sans-serif' }}>
             <span style={{ fontSize: 15, fontWeight: 700, color: DS.text }}>{active.name}</span>
@@ -331,7 +353,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
           ) : (
             <>
               <button onClick={() => setShowAddStocks(true)}
-                style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.accent}`, background: DS.accent, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <HiOutlinePlus size={13} /> Add Stocks
               </button>
               <div style={{ width: 1, height: 20, background: DS.border }} />
@@ -363,9 +385,9 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
       </div>
 
       {/* Table */}
-      <div style={{ flex: 1, overflow: 'auto', background: DS.surface }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', background: DS.surface, padding: '10px 12px', display: 'flex', flexDirection: 'column' }}>
         {active.companies.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 48, gap: 16, height: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '36px 24px', gap: 16, height: '100%' }}>
             <div style={{ width: 48, height: 48, borderRadius: 12, background: DS.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <HiOutlineBookmark size={22} color={DS.accent} />
             </div>
@@ -373,7 +395,9 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
             <div style={{ fontSize: 12, color: DS.textFaint }}>Click + Add Stocks to get started</div>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <>
+          <div ref={tableViewportRef} style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ background: DS.surfaceHover, position: 'sticky', top: 0, zIndex: 10 }}>
                 {editMode && <th style={{ width: 30, padding: '6px 0 6px 10px' }} />}
@@ -394,7 +418,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
               </tr>
             </thead>
             <tbody>
-              {active.companies.map((co, index) => {
+              {visibleCompanies.map((co, index) => {
                 const data = getAnnualData(co)
                 const yd = (data['2025'] ?? data['2024'] ?? data['2023'] ?? {}) as Record<string, unknown>
                 const isSelected = selectedForDelete.has(co)
@@ -443,6 +467,19 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
               })}
             </tbody>
           </table>
+          </div>
+          {pageCount > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 8, flexShrink: 0 }}>
+              <button disabled={safeTablePage === 1} onClick={() => setTablePage(page => Math.max(1, page - 1))} aria-label="Previous page" style={{ width: 26, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${DS.border}`, borderRadius: 5, background: DS.surface, color: safeTablePage === 1 ? DS.textFaint : DS.textSub, cursor: safeTablePage === 1 ? 'default' : 'pointer' }}>
+                <HiOutlineChevronLeft size={12} />
+              </button>
+              <span style={{ minWidth: 58, textAlign: 'center', color: DS.textMuted, fontSize: 10, fontVariantNumeric: 'tabular-nums' }}>{safeTablePage} / {pageCount}</span>
+              <button disabled={safeTablePage === pageCount} onClick={() => setTablePage(page => Math.min(pageCount, page + 1))} aria-label="Next page" style={{ width: 26, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${DS.border}`, borderRadius: 5, background: DS.surface, color: safeTablePage === pageCount ? DS.textFaint : DS.textSub, cursor: safeTablePage === pageCount ? 'default' : 'pointer' }}>
+                <HiOutlineChevronRight size={12} />
+              </button>
+            </div>
+          )}
+          </>
         )}
       </div>
 

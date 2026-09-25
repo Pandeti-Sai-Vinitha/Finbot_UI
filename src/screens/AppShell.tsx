@@ -205,7 +205,7 @@ export default function AppShell({
         {!collapsed && user.role !== 'admin' && (
           <>
             <div style={{ height: 1, background: DS.border, margin: '0 10px' }} />
-            <div style={{ padding: '7px 7px 0', flexShrink: 0 }}>
+            <div style={{ padding: '7px 7px 0', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 6px 6px' }}>
                 <span style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
                   Chat History
@@ -221,7 +221,7 @@ export default function AppShell({
                 </button>
               </div>
 
-              <div style={{ height: 160, overflowY: 'auto' }}>
+              <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
                 {chatSessions.map(sess => {
                   const isActive = sess.id === activeChatId && screen === 'chat'
                   return (
@@ -268,7 +268,7 @@ export default function AppShell({
           </>
         )}
 
-        <div style={{ flex: 1 }} />
+        {(collapsed || user.role === 'admin') && <div style={{ flex: 1 }} />}
 
         {/* Footer */}
         <div style={{ borderTop: `1px solid ${DS.border}`, padding: collapsed ? '10px 6px' : '10px 10px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>

@@ -202,9 +202,6 @@ export default function Screener({
 
       {/* Shared page navbar */}
       <div style={{ height: 48, background: DS.surface, borderBottom: `1px solid ${DS.border}`, padding: '0 20px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-        <div style={{ width: 28, height: 28, borderRadius: 7, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <HiOutlineAdjustmentsHorizontal size={14} color="#fff" />
-        </div>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: DS.text, lineHeight: 1.1 }}>Screener</div>
           <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 2, whiteSpace: 'nowrap' }}>Build queries to filter companies by financial metrics</div>

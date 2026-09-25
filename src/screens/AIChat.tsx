@@ -5,7 +5,7 @@ import {
   HiOutlineCheck, HiOutlineEye,
   HiOutlineChevronDown, HiOutlineChevronRight,
   HiOutlineLightBulb, HiOutlineArrowTrendingUp, HiOutlineTrash, HiOutlineTableCells, HiOutlineNewspaper,
-  HiOutlineAdjustmentsHorizontal, HiOutlineArrowsPointingOut, HiOutlineArrowsPointingIn,
+  HiOutlineAdjustmentsHorizontal,
 } from 'react-icons/hi2'
 import { BsRobot } from 'react-icons/bs'
 import { RiSparklingLine } from 'react-icons/ri'
@@ -1245,7 +1245,7 @@ function downloadInvestorDeck(company: string, quarter: string) {
 
 /* ─── Reference table ───────────────────────────────────────────── */
 /* Transposed: metrics as rows, companies as columns */
-function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }) {
+function RefTable({ rich, onClose, tableOnly = false }: { rich: RichContent; onClose?: () => void; tableOnly?: boolean }) {
   const fmt = (v: unknown) => (v !== undefined && v !== null && v !== '') ? String(v) : '—'
   const metrics = rich.referenceMetrics
   const companies = rich.referenceCompanies.slice(0, 6)
@@ -1254,7 +1254,7 @@ function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }
     const yd = (data['2025'] ?? data['2024'] ?? data['2023'] ?? {}) as Record<string, unknown>
     return { co, yd }
   })
-  const [maximized, setMaximized] = useState(false)
+  const [tablePopup, setTablePopup] = useState(false)
   const [selectedNews, setSelectedNews] = useState<{ title: string; summary: string; date: string } | null>(null)
   const newsHeadlines = [
     {
@@ -1276,21 +1276,22 @@ function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }
   const investorPresentations = ['Q1 FY2025', 'Q2 FY2025', 'Q3 FY2025', 'Q4 FY2025']
   if (companies.length === 0 || metrics.length === 0) return null
   return (
-    <div style={{ border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', background: DS.surface, boxShadow: '0 2px 8px rgba(37,99,235,0.04)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0 }}>
-      <div style={{ border: `1px solid ${DS.border}`, borderRadius: maximized ? 10 : 0, overflow: 'hidden', background: DS.surface, boxShadow: maximized ? '0 16px 40px rgba(15,23,42,0.18)' : 'none', display: 'flex', flexDirection: 'column', position: maximized ? 'fixed' : 'relative', top: maximized ? 16 : undefined, right: maximized ? 16 : undefined, bottom: maximized ? 16 : undefined, left: maximized ? 16 : undefined, zIndex: maximized ? 500 : undefined }}>
+    <div style={{ width: tableOnly ? 'fit-content' : undefined, maxWidth: '100%', border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', background: DS.surface, boxShadow: '0 2px 8px rgba(37,99,235,0.04)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0 }}>
+      <div style={{ border: `1px solid ${DS.border}`, borderRadius: 0, overflow: 'hidden', background: DS.surface, display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', background: '#eef2ff', gap: 8, borderBottom: `1px solid ${DS.accentBorder}` }}>
         <HiOutlineTableCells size={12} color={DS.accent} style={{ flexShrink: 0 }} />
         <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: DS.accent, letterSpacing: '0.06em' }}>REFERENCE DATA</span>
-        <button onClick={() => setMaximized(value => !value)} title={maximized ? 'Restore reference table' : 'Maximize reference table'} aria-label={maximized ? 'Restore reference table' : 'Maximize reference table'} style={{ width: 20, height: 20, borderRadius: 4, background: DS.accentSoft, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textSub, flexShrink: 0 }}>
-          {maximized ? <HiOutlineArrowsPointingIn size={11} /> : <HiOutlineArrowsPointingOut size={11} />}
+        {!tableOnly && <button onClick={() => setTablePopup(true)} title="Open reference table" aria-label="Open reference table" style={{ width: 20, height: 20, borderRadius: 4, background: DS.accentSoft, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textSub, flexShrink: 0 }}>
+          <HiOutlineChevronRight size={11} />
         </button>
+        }
         {onClose && (
           <button onClick={onClose} style={{ width: 18, height: 18, borderRadius: 4, background: DS.accentSoft, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textSub, flexShrink: 0 }}>
             <HiOutlineXMark size={10} />
           </button>
         )}
       </div>
-      <div style={{ maxWidth: '100%', minHeight: 0, overflowX: 'auto', overflowY: 'auto', maxHeight: maximized ? 'calc(100vh - 64px)' : 400, overscrollBehavior: 'contain' }}>
+      <div style={{ maxWidth: '100%', minHeight: 0, overflowX: 'auto', overflowY: 'auto', maxHeight: tableOnly ? 'min(55vh, 420px)' : 260, overscrollBehavior: 'contain' }}>
         <table style={{ width: 'max-content', minWidth: 650, borderCollapse: 'collapse', fontSize: 11 }}>
           <thead>
             <tr style={{ background: '#f0f4ff' }}>
@@ -1315,6 +1316,7 @@ function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }
         </table>
       </div>
       </div>
+        {!tableOnly && <>
         <div style={{ borderTop: `1px solid ${DS.border}`, background: DS.surface }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px 8px', borderBottom: `1px solid ${DS.border}` }}>
             <div style={{ width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: DS.accentSoft, color: DS.accent }}><HiOutlineNewspaper size={13} /></div>
@@ -1323,7 +1325,7 @@ function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }
               <div style={{ marginTop: 1, color: DS.textMuted, fontSize: 10 }}>Latest company coverage</div>
             </div>
           </div>
-          <div style={{ maxWidth: '100%', maxHeight: 260, overflowX: 'auto', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+          <div style={{ maxWidth: '100%', maxHeight: 210, overflowX: 'auto', overflowY: 'auto', overscrollBehavior: 'contain' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(220px, 1fr))', minWidth: 660 }}>
             {newsHeadlines.map((story, index) => (
               <button key={story.title} onClick={() => setSelectedNews(selectedNews && selectedNews.title === story.title ? null : story)} style={{ display: 'block', width: '100%', background: selectedNews?.title === story.title ? DS.accentSoft : DS.surface, border: 'none', borderRight: index < 2 ? `1px solid ${DS.border}` : 'none', padding: '10px 12px', textAlign: 'left', cursor: 'pointer' }}>
@@ -1355,7 +1357,8 @@ function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }
               <div style={{ color: DS.text, fontSize: 12, fontWeight: 700 }}>Investor presentations</div>
               <div style={{ color: DS.textMuted, fontSize: 10 }}>{investorPresentations.length} available</div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
+            <div style={{ maxHeight: 150, overflowX: 'auto', overflowY: 'auto', overscrollBehavior: 'contain' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
               {investorPresentations.map(doc => (
                 <div key={doc} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 8, padding: '8px 9px' }}>
                   <div style={{ minWidth: 0 }}>
@@ -1367,9 +1370,18 @@ function RefTable({ rich, onClose }: { rich: RichContent; onClose?: () => void }
                   </button>
                 </div>
               ))}
+              </div>
             </div>
           </div>
         </div>
+        </>}
+      {tablePopup && (
+        <div onClick={() => setTablePopup(false)} style={{ position: 'fixed', inset: 0, background: DS.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 600, padding: 16 }}>
+          <div onClick={event => event.stopPropagation()} style={{ width: 'fit-content', maxWidth: 'calc(100vw - 32px)', maxHeight: 'min(70vh, 520px)', overflow: 'hidden', borderRadius: 12 }}>
+            <RefTable rich={rich} tableOnly onClose={() => setTablePopup(false)} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1391,6 +1403,7 @@ export default function AIChat({
   const [showRef, setShowRef] = useState<number | null>(null)
   const [showCoach, setShowCoach] = useState(() => !sessionStorage.getItem(PERSONALIZE_COACH_KEY))
   const bottomRef = useRef<HTMLDivElement>(null)
+  const referenceMessageRef = useRef<HTMLDivElement>(null)
 
   // Register opener so sidebar's personalize button can trigger it
   useEffect(() => { onPersonalizeRef?.(() => setShowConfig(true)) }, [onPersonalizeRef])
@@ -1407,6 +1420,11 @@ export default function AIChat({
   const msgs = (activeSession?.messages ?? []) as (ChatMessage & { rich?: RichContent })[]
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs, loading])
+  useEffect(() => {
+    if (showRef !== null) {
+      requestAnimationFrame(() => referenceMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    }
+  }, [showRef])
 
   const send = (text?: string) => {
     const msg = (text ?? input).trim()
@@ -1448,9 +1466,6 @@ export default function AIChat({
       {/* Header */}
       <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
         <div style={{ height: 48, display: 'flex', alignItems: 'center', gap: 10, padding: '0 20px' }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg,#2563eb,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(37,99,235,0.28)' }}>
-            <BsRobot size={14} color="#fff" />
-          </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em', fontFamily: 'Instrument Sans, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {activeSession?.title ?? 'FinBot AI'}
@@ -1536,7 +1551,7 @@ export default function AIChat({
           {msgs.map(m => {
             const refOpen = m.role === 'assistant' && showRef === m.id && !!m.rich
             return (
-              <div key={m.id} style={{ display: 'flex', gap: 11, flexDirection: m.role === 'user' ? 'row-reverse' : 'row', alignItems: 'flex-start' }}>
+              <div ref={refOpen ? referenceMessageRef : undefined} key={m.id} style={{ display: 'flex', gap: 11, flexDirection: m.role === 'user' ? 'row-reverse' : 'row', alignItems: 'flex-start', scrollMarginTop: 10 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(37,99,235,0.22)' }}>
                   {m.role === 'user' ? <span style={{ fontSize: 11, color: '#fff', fontWeight: 700 }}>U</span> : <BsRobot size={14} color="#fff" />}
                 </div>

@@ -332,9 +332,6 @@ export default function Dashboard({ onNavigate, watchlists, activeWatchlistId, o
 
       <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', height: 48, padding: '0 20px', gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <HiOutlineChartBar size={14} color="#fff" />
-          </div>
           <div>
             <div style={{ fontSize: compact ? 14 : 16, fontWeight: 700, color: DS.text, letterSpacing: '-0.02em', fontFamily: 'Instrument Sans, sans-serif' }}>Dashboard</div>
             <div style={{ fontSize: 10, color: DS.textFaint, marginTop: 1 }}>{greeting} · {dateStr}</div>

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { HiOutlineArrowTrendingUp, HiOutlineArrowRight, HiOutlineNewspaper, HiOutlineChartBar, HiOutlineDocumentArrowDown } from 'react-icons/hi2'
+import { HiOutlineArrowTrendingUp, HiOutlineArrowRight, HiOutlineArrowLeft, HiOutlineNewspaper, HiOutlineChartBar, HiOutlineDocumentArrowDown } from 'react-icons/hi2'
 import { ANNUAL_METRIC_GROUPS, QUARTERS, SECTOR_COMPANIES, SECTORS, YEARS, getAnnualData, getQuarterlyData } from '../data/finData'
 
 type Cell = number | string
@@ -271,12 +271,15 @@ export default function CompanyDetail({ company, onBack }: Props) {
 
   return <div style={{ height: '100%', overflowY: 'auto', background: colors.bg, color: colors.text, fontFamily: 'Inter, sans-serif' }}>
     <header style={{ background: colors.surface, borderBottom: `1px solid ${colors.border}`, padding: '9px 14px 11px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <div />
-        <button onClick={onBack} style={{ border: `1px solid ${colors.border}`, borderRadius: 6, background: colors.surface, padding: '5px 12px', color: colors.text, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Back</button>
-      </div>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 230 }}><div style={{ color: colors.muted, fontSize: 10, marginBottom: 2 }}>{sector}</div><h1 style={{ margin: 0, fontSize: 25, letterSpacing: '-0.04em', fontWeight: 700 }}>{company}</h1><div style={{ color: colors.faint, fontSize: 10, marginTop: 2 }}>{basis === 'consolidated' ? 'Consolidated' : 'Standalone'} figures in Rs. Crores | FY2021 - FY2025</div></div>
+        <div style={{ flex: 1, minWidth: 230 }}>
+          <div style={{ color: colors.muted, fontSize: 10, marginBottom: 2 }}>{sector}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <button onClick={onBack} title="Back to dashboard" aria-label="Back to dashboard" style={{ width: 22, height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${colors.border}`, borderRadius: 5, background: colors.soft, color: colors.accent, padding: 0, cursor: 'pointer', flexShrink: 0 }}><HiOutlineArrowLeft size={12} /></button>
+            <h1 style={{ margin: 0, fontSize: 25, letterSpacing: '-0.04em', fontWeight: 700 }}>{company}</h1>
+          </div>
+          <div style={{ color: colors.faint, fontSize: 10, marginTop: 2 }}>{basis === 'consolidated' ? 'Consolidated' : 'Standalone'} figures in Rs. Crores | FY2021 - FY2025</div>
+        </div>
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{summary.map(([label, value]) => <div key={label} style={{ minWidth: 100, padding: '6px 8px', background: colors.soft, border: `1px solid ${colors.border}`, borderRadius: 6 }}><div style={{ color: colors.muted, fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div><div style={{ marginTop: 1, color: colors.text, fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{value}</div></div>)}</div>
       </div>
     </header>

@@ -82,7 +82,7 @@ const MOCK_USERS = [
   { id: 6, name: 'Kiran Reddy',   email: 'kiran@finbot.in',   watchlists: ['Core Watchlist', 'IT Watch', 'Pharma Watch'],            screeners: [],                                              lastActive: 'Last week' },
 ]
 
-const PAGE_SIZE = 4
+const DEFAULT_PAGE_SIZE = 4
 
 /* ─── Shared small components ────────────────────────────────────── */
 function SL({ label }: { label: string }) {
@@ -384,9 +384,6 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
       {/* Header */}
       <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, padding: '0 20px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, height: 48 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <HiOutlineCommandLine size={14} color="#fff" />
-          </div>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: DS.text }}>Admin Console</div>
             <div style={{ fontSize: 10, color: DS.textFaint }}>Backend operations · User management</div>
@@ -412,7 +409,7 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
             { id: 'defaults', label: 'Default Config',      icon: HiOutlineBookmark },
           ] as const).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: 'none', border: 'none', borderBottom: activeTab === tab.id ? `2px solid ${DS.accent}` : '2px solid transparent', color: activeTab === tab.id ? DS.accent : DS.textSub, fontSize: 12, fontWeight: activeTab === tab.id ? 700 : 400, cursor: 'pointer', transition: 'all 0.12s' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', background: 'none', border: 'none', borderBottom: activeTab === tab.id ? `2px solid ${DS.accent}` : '2px solid transparent', color: activeTab === tab.id ? DS.accent : DS.textSub, fontSize: 11, fontWeight: activeTab === tab.id ? 700 : 400, cursor: 'pointer', transition: 'all 0.12s' }}>
               <tab.icon size={13} />
               {tab.label}
             </button>
@@ -508,24 +505,44 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
 function UsersDataTab() {
   const [expandedUser, setExpandedUser] = useState<number | null>(null)
   const [page, setPage] = useState(0)
-  const totalPages = Math.ceil(MOCK_USERS.length / PAGE_SIZE)
-  const pageUsers = MOCK_USERS.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const usersViewportRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const element = usersViewportRef.current
+    if (!element) return
+    const measurePageSize = () => {
+      const rowHeight = 42
+      const rowGap = 6
+      setPageSize(Math.max(1, Math.floor((element.clientHeight + rowGap) / (rowHeight + rowGap))))
+    }
+    const observer = new ResizeObserver(measurePageSize)
+    observer.observe(element)
+    measurePageSize()
+    return () => observer.disconnect()
+  }, [expandedUser])
+
+  const totalPages = Math.max(1, Math.ceil(MOCK_USERS.length / pageSize))
+  const safePage = Math.min(page, totalPages - 1)
+  const pageUsers = MOCK_USERS.slice(safePage * pageSize, (safePage + 1) * pageSize)
+
+  useEffect(() => { if (page !== safePage) setPage(safePage) }, [page, safePage])
 
   return (
-    <div style={{ flex: 1, overflow: 'hidden', padding: '16px 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ flex: 1, overflow: 'hidden', padding: '10px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
 
       {/* Summary stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {[
           { label: 'Total Analysts', value: MOCK_USERS.length, icon: <HiOutlineUsers size={16} color={DS.accent} />, bg: DS.accentSoft, border: DS.accentBorder, color: DS.accent },
           { label: 'Total Watchlists', value: MOCK_USERS.reduce((a, u) => a + u.watchlists.length, 0), icon: <HiOutlineBookmark size={16} color={DS.green} />, bg: DS.greenSoft, border: DS.greenBorder, color: DS.green },
           { label: 'Total Screeners', value: MOCK_USERS.reduce((a, u) => a + u.screeners.length, 0), icon: <HiOutlineAdjustmentsHorizontal size={16} color={DS.purple} />, bg: DS.purpleSoft, border: DS.purpleBorder, color: DS.purple },
         ].map(stat => (
-          <div key={stat.label} style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: 'none' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: stat.bg, border: `1px solid ${stat.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{stat.icon}</div>
+          <div key={stat.label} style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8, boxShadow: 'none' }}>
+            <div style={{ width: 30, height: 30, borderRadius: 7, background: stat.bg, border: `1px solid ${stat.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{stat.icon}</div>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: stat.color }}>{stat.value}</div>
-              <div style={{ fontSize: 11, color: DS.textFaint }}>{stat.label}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: stat.color }}>{stat.value}</div>
+              <div style={{ fontSize: 10, color: DS.textFaint }}>{stat.label}</div>
             </div>
           </div>
         ))}
@@ -533,28 +550,28 @@ function UsersDataTab() {
 
       {/* Analyst accounts */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5, flexShrink: 0 }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em' }}>ANALYST ACCOUNTS</div>
           {totalPages > 1 && (
             <div style={{ fontSize: 10, color: DS.textFaint }}>
-              Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, MOCK_USERS.length)} of {MOCK_USERS.length}
+              Showing {safePage * pageSize + 1}–{Math.min((safePage + 1) * pageSize, MOCK_USERS.length)} of {MOCK_USERS.length}
             </div>
           )}
         </div>
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', minHeight: 0, paddingRight: 4 }}>
+        <div ref={usersViewportRef} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'hidden', minHeight: 0, paddingRight: 4 }}>
           {pageUsers.map(u => {
             const expanded = expandedUser === u.id
             return (
-              <div key={u.id} style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', boxShadow: 'none', flexShrink: 0 }}>
+              <div key={u.id} style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 7, overflow: 'hidden', boxShadow: 'none', flexShrink: 0 }}>
                 <button onClick={() => setExpandedUser(expanded ? null : u.id)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                  <div style={{ width: 26, height: 26, borderRadius: '50%', background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
                     {u.name.charAt(0)}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: DS.text }}>{u.name}</div>
-                    <div style={{ fontSize: 11, color: DS.textFaint }}>{u.email}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: DS.text }}>{u.name}</div>
+                    <div style={{ fontSize: 10, color: DS.textFaint }}>{u.email}</div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
                     <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 6, background: DS.greenSoft, border: `1px solid ${DS.greenBorder}`, color: DS.green, fontWeight: 600 }}>ANALYST</span>
@@ -563,35 +580,35 @@ function UsersDataTab() {
                   </div>
                 </button>
                 {expanded && (
-                  <div style={{ borderTop: `1px solid ${DS.border}`, padding: '14px 18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                  <div style={{ borderTop: `1px solid ${DS.border}`, padding: '8px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                      <div style={{ fontSize: 8, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                         <HiOutlineBookmark size={10} /> WATCHLISTS ({u.watchlists.length})
                       </div>
-                      <div style={{ flex: 1, overflowY: 'auto', maxHeight: 150, paddingRight: 4, paddingBottom: 4, minHeight: 0 }}>
+                      <div style={{ flex: 1, overflowY: 'auto', maxHeight: 110, paddingRight: 3, paddingBottom: 2, minHeight: 0 }}>
                         {u.watchlists.length === 0
                           ? <div style={{ fontSize: 11, color: DS.textFaint, fontStyle: 'italic' }}>No watchlists yet</div>
                           : u.watchlists.map(wl => (
-                            <div key={wl} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 12px', background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 6, marginBottom: 6 }}>
-                              <HiOutlineCheckCircle size={13} color={DS.accent} />
-                              <span style={{ fontSize: 12, color: DS.accent, fontWeight: 500 }}>{wl}</span>
-                              {wl === 'Core Watchlist' && <span style={{ marginLeft: 'auto', fontSize: 9, color: DS.textFaint }}>DEFAULT</span>}
+                            <div key={wl} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 8px', background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 5, marginBottom: 4 }}>
+                              <HiOutlineCheckCircle size={11} color={DS.accent} />
+                              <span style={{ fontSize: 10, color: DS.accent, fontWeight: 500 }}>{wl}</span>
+                              {wl === 'Core Watchlist' && <span style={{ marginLeft: 'auto', fontSize: 8, color: DS.textFaint }}>DEFAULT</span>}
                             </div>
                           ))
                         }
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                      <div style={{ fontSize: 8, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                         <HiOutlineAdjustmentsHorizontal size={10} /> SCREENERS ({u.screeners.length})
                       </div>
-                      <div style={{ flex: 1, overflowY: 'auto', maxHeight: 150, paddingRight: 4, paddingBottom: 4, minHeight: 0 }}>
+                      <div style={{ flex: 1, overflowY: 'auto', maxHeight: 110, paddingRight: 3, paddingBottom: 2, minHeight: 0 }}>
                         {u.screeners.length === 0
                           ? <div style={{ fontSize: 11, color: DS.textFaint, fontStyle: 'italic' }}>No saved screeners</div>
                           : u.screeners.map(sc => (
-                            <div key={sc} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 12px', background: DS.purpleSoft, border: `1px solid ${DS.purpleBorder}`, borderRadius: 6, marginBottom: 6 }}>
-                              <HiOutlineAdjustmentsHorizontal size={13} color={DS.purple} />
-                              <span style={{ fontSize: 12, color: DS.purple, fontWeight: 500 }}>{sc}</span>
+                            <div key={sc} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 8px', background: DS.purpleSoft, border: `1px solid ${DS.purpleBorder}`, borderRadius: 5, marginBottom: 4 }}>
+                              <HiOutlineAdjustmentsHorizontal size={11} color={DS.purple} />
+                              <span style={{ fontSize: 10, color: DS.purple, fontWeight: 500 }}>{sc}</span>
                             </div>
                           ))
                         }
@@ -606,18 +623,18 @@ function UsersDataTab() {
 
         {totalPages > 1 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, flexShrink: 0 }}>
-            <button onClick={() => setPage(p => p - 1)} disabled={page === 0}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 8, border: `1px solid ${DS.border}`, background: page === 0 ? '#f8faff' : DS.surface, color: page === 0 ? DS.textFaint : DS.textSub, fontSize: 11, fontWeight: 500, cursor: page === 0 ? 'not-allowed' : 'pointer' }}>
+            <button onClick={() => setPage(p => p - 1)} disabled={safePage === 0}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 8, border: `1px solid ${DS.border}`, background: safePage === 0 ? '#f8faff' : DS.surface, color: safePage === 0 ? DS.textFaint : DS.textSub, fontSize: 11, fontWeight: 500, cursor: safePage === 0 ? 'not-allowed' : 'pointer' }}>
               <HiOutlineChevronLeft size={12} /> Prev
             </button>
             {Array.from({ length: totalPages }, (_, i) => (
               <button key={i} onClick={() => setPage(i)}
-                style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${i === page ? DS.accentBorder : DS.border}`, background: i === page ? DS.accentSoft : DS.surface, color: i === page ? DS.accent : DS.textSub, fontSize: 12, fontWeight: i === page ? 700 : 400, cursor: 'pointer' }}>
+                style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${i === safePage ? DS.accentBorder : DS.border}`, background: i === safePage ? DS.accentSoft : DS.surface, color: i === safePage ? DS.accent : DS.textSub, fontSize: 12, fontWeight: i === safePage ? 700 : 400, cursor: 'pointer' }}>
                 {i + 1}
               </button>
             ))}
-            <button onClick={() => setPage(p => p + 1)} disabled={page >= totalPages - 1}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 8, border: `1px solid ${DS.border}`, background: page >= totalPages - 1 ? '#f8faff' : DS.surface, color: page >= totalPages - 1 ? DS.textFaint : DS.textSub, fontSize: 11, fontWeight: 500, cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer' }}>
+            <button onClick={() => setPage(p => p + 1)} disabled={safePage >= totalPages - 1}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius: 8, border: `1px solid ${DS.border}`, background: safePage >= totalPages - 1 ? '#f8faff' : DS.surface, color: safePage >= totalPages - 1 ? DS.textFaint : DS.textSub, fontSize: 11, fontWeight: 500, cursor: safePage >= totalPages - 1 ? 'not-allowed' : 'pointer' }}>
               Next <HiOutlineChevronRight size={12} />
             </button>
           </div>
@@ -643,31 +660,28 @@ function DefaultConfigTab({ botConfigs, onUpdateBotConfig }: {
   )
 
   return (
-    <div style={{ flex: 1, overflow: 'hidden', padding: '16px 20px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ flex: 1, overflow: 'hidden', padding: '10px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-        <div style={{ width: 42, height: 42, borderRadius: 11, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <HiOutlineAdjustmentsHorizontal size={18} color={DS.accent} />
-        </div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: DS.text, marginBottom: 3 }}>Default AI Personalization</div>
-          <div style={{ fontSize: 12, color: DS.textSub, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: DS.text, marginBottom: 2 }}>Default AI Personalization</div>
+          <div style={{ fontSize: 11, color: DS.textSub, lineHeight: 1.4 }}>
             Configure the default FinBot personalization for all analyst logins. Changes reflect immediately across every analyst's default config.
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: DS.accent, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 8, padding: '5px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: DS.accent, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, borderRadius: 6, padding: '4px 8px' }}>
             <HiOutlineUsers size={12} /> {MOCK_USERS.length} analysts
           </div>
           {!editing && (
             <button onClick={() => setEditing(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: DS.accent, border: 'none', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', boxShadow: 'none' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 5, background: DS.accent, border: 'none', color: '#fff', fontSize: 10, fontWeight: 600, cursor: 'pointer', boxShadow: 'none' }}>
               <HiOutlinePencilSquare size={12} /> Edit
             </button>
           )}
           {editing && (
             <button onClick={() => setEditing(false)}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: DS.surface, border: `1px solid ${DS.borderMed}`, color: DS.textSub, fontSize: 11, fontWeight: 600, cursor: 'pointer', boxShadow: 'none' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 5, background: DS.surface, border: `1px solid ${DS.borderMed}`, color: DS.textSub, fontSize: 10, fontWeight: 600, cursor: 'pointer', boxShadow: 'none' }}>
               <HiOutlineXMark size={12} /> Cancel
             </button>
           )}
@@ -701,33 +715,33 @@ function DefaultConfigReadOnly({ config }: { config: BotConfig }) {
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minHeight: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0 }}>
       {/* Sectors + Response Style row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, flexShrink: 0 }}>
-        <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '12px 14px', boxShadow: 'none' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em', marginBottom: 10 }}>SECTORS ({sectors.length})</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, flexShrink: 0 }}>
+        <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 8, padding: '9px 11px', boxShadow: 'none' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em', marginBottom: 7 }}>SECTORS ({sectors.length})</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {sectors.map(s => (
-              <span key={s} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, color: DS.accent, fontWeight: 600 }}>{s}</span>
+              <span key={s} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 5, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, color: DS.accent, fontWeight: 600 }}>{s}</span>
             ))}
             {sectors.length === 0 && <span style={{ fontSize: 11, color: DS.textFaint, fontStyle: 'italic' }}>No sectors configured</span>}
           </div>
         </div>
-        <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, padding: '12px 14px', boxShadow: 'none', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 140 }}>
+        <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 8, padding: '9px 11px', boxShadow: 'none', display: 'flex', flexDirection: 'column', gap: 5, minWidth: 120 }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em' }}>RESPONSE STYLE</div>
-          <span style={{ fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 6, background: sc.bg, border: `1px solid ${sc.border}`, color: sc.color, textTransform: 'capitalize', textAlign: 'center' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 5, background: sc.bg, border: `1px solid ${sc.border}`, color: sc.color, textTransform: 'capitalize', textAlign: 'center' }}>
             {config.responseStyle}
           </span>
         </div>
       </div>
 
       {/* Companies by sector */}
-      <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', boxShadow: 'none', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${DS.border}`, background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+      <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 8, overflow: 'hidden', boxShadow: 'none', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        <div style={{ padding: '8px 11px', borderBottom: `1px solid ${DS.border}`, background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <HiOutlineUsers size={13} color={DS.accent} />
           <span style={{ fontSize: 11, fontWeight: 700, color: DS.text, flex: 1 }}>Companies ({config.companies.length})</span>
         </div>
-        <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+        <div style={{ padding: '8px 11px', display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
           {Object.entries(companiesBySector).map(([sec, cos]) => (
             <div key={sec}>
               <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 6 }}>{sec}</div>
