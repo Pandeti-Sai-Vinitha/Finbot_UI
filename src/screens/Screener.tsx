@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
-  HiOutlineMagnifyingGlass, HiOutlineChevronDown, HiOutlineChevronUp,
+  HiOutlineChevronDown, HiOutlineChevronUp,
   HiOutlinePlus, HiOutlineXMark, HiOutlineBookmark, HiOutlineCheck,
   HiOutlineAdjustmentsHorizontal, HiOutlineArrowRight, HiOutlineTrash,
 } from 'react-icons/hi2'
@@ -101,8 +101,6 @@ export default function Screener({
 }: Props) {
   const [activeScreenerId, setActiveScreenerId] = useState<number | null>(null)
   const [query, setQuery] = useState('')
-  const [metricSearch, setMetricSearch] = useState('')
-  const [searchOpen, setSearchOpen] = useState(false)
   const [preferredOpen, setPreferredOpen] = useState(true)
   const [activeTab, setActiveTab] = useState(0)
   const [results, setResults] = useState<ReturnType<typeof runScreener> | null>(null)
@@ -110,7 +108,6 @@ export default function Screener({
   const [toast, setToast] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
   const [showSavedMenu, setShowSavedMenu] = useState(false)
-  const searchRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -135,22 +132,22 @@ export default function Screener({
       const sep = q.length > 0 && !q.endsWith(' ') ? ' ' : ''
       return q + sep + token + ' '
     })
-    setMetricSearch('')
-    setSearchOpen(false)
     setTimeout(() => textareaRef.current?.focus(), 0)
   }
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const filteredMetrics = metricSearch.trim()
-    ? ALL_METRICS.filter(m => m.toLowerCase().includes(metricSearch.toLowerCase()))
+  const metricFragment = query.match(/(?:^|(?:AND|OR)\s+)([^><=!]*?)$/i)?.[1].trim() ?? ''
+  const metricSuggestions = metricFragment.length > 0
+    ? ALL_METRICS.filter(metric => metric.toLowerCase().includes(metricFragment.toLowerCase()) && metric.toLowerCase() !== metricFragment.toLowerCase()).slice(0, 6)
     : []
+  const insertMetricSuggestion = (metric: string) => {
+    setQuery(current => {
+      const match = current.match(/(?:^|(?:AND|OR)\s+)([^><=!]*?)$/i)
+      if (!match || match.index === undefined) return `${current}${current && !current.endsWith(' ') ? ' ' : ''}${metric} `
+      const metricStart = match.index + match[0].length - match[1].length
+      return `${current.slice(0, metricStart)}${metric} `
+    })
+    setTimeout(() => textareaRef.current?.focus(), 0)
+  }
 
   const handlePreview = () => {
     if (!query.trim()) return
@@ -241,15 +238,29 @@ export default function Screener({
                   <HiOutlineXMark size={11} /> Clear
                 </button>}
               </div>
-              <textarea
-                className="no-focus-glow"
-                ref={textareaRef}
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                rows={3}
-                placeholder={`e.g., ${FREQUENTLY_USED_METRICS[0]} > 1000 AND ${FREQUENTLY_USED_METRICS[2]} > 10`}
-                style={{ width: '100%', border: 'none', outline: 'none', resize: 'none', fontSize: 12.5, color: DS.text, background: 'transparent', lineHeight: 1.6, boxSizing: 'border-box', padding: '8px 12px' }}
-              />
+              <div style={{ position: 'relative' }}>
+                <textarea
+                  className="no-focus-glow"
+                  ref={textareaRef}
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  rows={3}
+                  placeholder={`e.g., ${FREQUENTLY_USED_METRICS[0]} > 1000 AND ${FREQUENTLY_USED_METRICS[2]} > 10`}
+                  style={{ width: '100%', border: 'none', outline: 'none', resize: 'none', fontSize: 12.5, color: DS.text, background: 'transparent', lineHeight: 1.6, boxSizing: 'border-box', padding: '8px 12px' }}
+                />
+                {metricSuggestions.length > 0 && (
+                  <div style={{ position: 'absolute', left: 12, right: 12, top: 34, zIndex: 50, background: DS.surface, border: `1px solid ${DS.accentBorder}`, borderRadius: 7, boxShadow: '0 6px 16px rgba(37,99,235,0.12)', overflow: 'hidden' }}>
+                    {metricSuggestions.map(metric => (
+                      <button key={metric} onMouseDown={event => event.preventDefault()} onClick={() => insertMetricSuggestion(metric)}
+                        style={{ width: '100%', padding: '5px 9px', textAlign: 'left', background: 'none', border: 'none', color: DS.textSub, fontSize: 11, cursor: 'pointer' }}
+                        onMouseEnter={event => { event.currentTarget.style.background = DS.accentSoft; event.currentTarget.style.color = DS.accent }}
+                        onMouseLeave={event => { event.currentTarget.style.background = 'none'; event.currentTarget.style.color = DS.textSub }}>
+                        {metric}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               {/* Operator chips + compact actions */}
               <div style={{ padding: '6px 12px 8px', display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
                 {OPERATORS.map(op => (
@@ -260,32 +271,6 @@ export default function Screener({
                     {op}
                   </button>
                 ))}
-                {/* Metric search */}
-                <div ref={searchRef} style={{ position: 'relative' }}>
-                  <button onClick={() => setSearchOpen(o => !o)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 9px', fontSize: 11, borderRadius: 8, background: searchOpen ? DS.accentSoft : '#f1f5f9', border: `1px solid ${searchOpen ? DS.accentBorder : DS.border}`, color: searchOpen ? DS.accent : DS.textSub, cursor: 'pointer', fontWeight: 500 }}>
-                    <HiOutlineMagnifyingGlass size={11} /> Add Metric
-                  </button>
-                  {searchOpen && (
-                    <div style={{ position: 'absolute', top: '110%', left: 0, zIndex: 50, background: DS.surface, border: `1px solid ${DS.accentBorder}`, borderRadius: 10, boxShadow: '0 8px 24px rgba(37,99,235,0.12)', width: 240, overflow: 'hidden' }}>
-                      <div style={{ padding: '8px 10px', borderBottom: `1px solid ${DS.border}` }}>
-                        <input autoFocus value={metricSearch} onChange={e => setMetricSearch(e.target.value)}
-                          placeholder="Search metrics…"
-                          style={{ width: '100%', border: 'none', outline: 'none', fontSize: 12, color: DS.text, background: 'transparent', boxSizing: 'border-box' }} />
-                      </div>
-                      <div style={{ maxHeight: 200, overflowY: 'auto', padding: '4px 0' }}>
-                        {(filteredMetrics.length > 0 ? filteredMetrics : FREQUENTLY_USED_METRICS).map(m => (
-                          <button key={m} onClick={() => appendToQuery(m)}
-                            style={{ width: '100%', textAlign: 'left', padding: '6px 12px', background: 'none', border: 'none', fontSize: 12, color: DS.text, cursor: 'pointer' }}
-                            onMouseEnter={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.color = DS.accent }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = DS.text }}>
-                            {m}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <button onClick={handlePreview} disabled={!query.trim()}
                     style={{ padding: '4px 10px', border: query.trim() ? `1px solid ${DS.accent}` : `1px solid ${DS.border}`, borderRadius: 6, background: query.trim() ? DS.accent : DS.surfaceHover, color: query.trim() ? '#fff' : DS.textFaint, fontSize: 11, fontWeight: 600, cursor: query.trim() ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 4, minHeight: 26 }}>

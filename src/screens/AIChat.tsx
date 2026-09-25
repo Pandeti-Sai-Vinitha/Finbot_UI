@@ -7,8 +7,8 @@ import {
   HiOutlineLightBulb, HiOutlineArrowTrendingUp, HiOutlineTrash, HiOutlineTableCells, HiOutlineNewspaper,
   HiOutlineAdjustmentsHorizontal,
 } from 'react-icons/hi2'
-import { BsRobot } from 'react-icons/bs'
 import { RiSparklingLine } from 'react-icons/ri'
+import finbotLogo from '../../assets/FinBot_Logo.png'
 import { DEFAULT_BOT_CONFIG_ID } from '../App'
 import type { BotConfig, ChatSession, ChatMessage, SavedScreener } from '../App'
 import {
@@ -1519,8 +1519,8 @@ export default function AIChat({
       <div style={{ flex: 1, overflow: 'auto', padding: msgs.length === 0 ? '12px 16px 8px' : '10px 16px', position: 'relative', background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37,99,235,0.07), transparent 55%)' }}>
         {msgs.length === 0 && (
           <div style={{ maxWidth: 760, margin: '2vh auto 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg,#2563eb,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(37,99,235,0.22)', marginBottom: 10 }}>
-              <HiOutlineSparkles size={24} color="#fff" />
+            <div style={{ width: 48, height: 48, borderRadius: 12, overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(37,99,235,0.12)', marginBottom: 10 }}>
+              <img src={finbotLogo} alt="FinBot" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 28%' }} />
             </div>
             <div style={{ fontSize: 20, fontWeight: 700, color: DS.text, marginBottom: 5, letterSpacing: '-0.03em', fontFamily: 'Instrument Sans, sans-serif', textAlign: 'center' }}>Hello! I&apos;m FinBot.</div>
             <div style={{ fontSize: 12.5, color: DS.textSub, lineHeight: 1.55, textAlign: 'center', maxWidth: 520, marginBottom: 10 }}>Your AI analytics assistant for Indian equities — theses, comparisons, mandate analysis, and filings-backed insights for NSE/BSE companies.</div>
@@ -1553,7 +1553,7 @@ export default function AIChat({
             return (
               <div ref={refOpen ? referenceMessageRef : undefined} key={m.id} style={{ display: 'flex', gap: 11, flexDirection: m.role === 'user' ? 'row-reverse' : 'row', alignItems: 'flex-start', scrollMarginTop: 10 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(37,99,235,0.22)' }}>
-                  {m.role === 'user' ? <span style={{ fontSize: 11, color: '#fff', fontWeight: 700 }}>U</span> : <BsRobot size={14} color="#fff" />}
+                  {m.role === 'user' ? <span style={{ fontSize: 11, color: '#fff', fontWeight: 700 }}>U</span> : <img src={finbotLogo} alt="FinBot" style={{ width: 32, height: 32, objectFit: 'cover', objectPosition: '50% 28%' }} />}
                 </div>
                 {/* Split layout when reference is open */}
                 {refOpen ? (
@@ -1635,7 +1635,7 @@ export default function AIChat({
           {loading && (
             <div style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
               <div style={{ width: 30, height: 30, borderRadius: 8, background: DS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <BsRobot size={14} color="#fff" />
+                <img src={finbotLogo} alt="FinBot" style={{ width: 30, height: 30, objectFit: 'cover', objectPosition: '50% 28%' }} />
               </div>
               <div style={{ flex: 1, maxWidth: 460 }}>
                 <ThinkingBubble phase={thinkPhase} />

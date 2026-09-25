@@ -7,6 +7,7 @@ import {
   HiOutlineSparkles,
 } from 'react-icons/hi2'
 import { RiSparklingLine } from 'react-icons/ri'
+import finbotLogo from '../../assets/FinBot_Logo.png'
 import Dashboard from './Dashboard'
 import AIChat from './AIChat'
 import Admin, { AdminDashboard } from './Admin'
@@ -121,14 +122,9 @@ export default function AppShell({
           justifyContent: collapsed ? 'center' : 'flex-start',
           background: DS.surface,
         }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: 7,
-            background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <HiOutlineSparkles size={15} color="#fff" />
-          </div>
+          {!collapsed && <div style={{ width: 28, height: 28, borderRadius: 7, overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <img src={finbotLogo} alt="FinBot" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 28%' }} />
+          </div>}
 
           {!collapsed && (
             <>
@@ -138,12 +134,6 @@ export default function AppShell({
                   {user.role === 'admin' ? 'Admin' : 'Analyst'}
                 </div>
               </div>
-              <span style={{
-                fontSize: 8, color: DS.accent, border: `1px solid ${DS.accentBorder}`,
-                borderRadius: 6, padding: '3px 5px', fontWeight: 700, letterSpacing: '0.05em', flexShrink: 0, background: DS.accentSoft,
-              }}>
-                BETA
-              </span>
             </>
           )}
 
@@ -157,7 +147,7 @@ export default function AppShell({
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: DS.textFaint,
               flexShrink: 0,
-              marginLeft: collapsed ? 'auto' : 2,
+              marginLeft: collapsed ? 0 : 2,
             }}
             onMouseEnter={e => { e.currentTarget.style.background = DS.accentSoft; e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.color = DS.accent }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = DS.border; e.currentTarget.style.color = DS.textFaint }}

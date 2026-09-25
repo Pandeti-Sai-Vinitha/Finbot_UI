@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { RiSparklingLine } from 'react-icons/ri'
+import finbotLogo from '../../assets/FinBot_Logo.png'
 import {
   HiOutlineEye, HiOutlineEyeSlash, HiOutlineXMark,
   HiOutlineEnvelope, HiOutlineLockClosed, HiOutlineUser,
@@ -154,11 +155,10 @@ export default function Landing({ onLogin }: Props) {
       {/* Nav */}
       <nav style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 28px', background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 24, height: 24, borderRadius: 6, background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <RiSparklingLine size={14} color="#fff" />
+          <div style={{ width: 24, height: 24, borderRadius: 6, overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={finbotLogo} alt="FinBot" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '50% 28%' }} />
           </div>
           <span style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: 'Instrument Sans, sans-serif', letterSpacing: '-0.02em' }}>FinBot</span>
-          <span style={{ fontSize: 8, color: C.textFaint, letterSpacing: '0.08em', fontWeight: 600 }}>BETA</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
           <button onClick={() => setMode('login')}
