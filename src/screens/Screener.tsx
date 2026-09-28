@@ -55,6 +55,15 @@ const OPERATORS = ['<', '=', '>', '(', 'AND', 'OR', ')']
 
 const ALL_COMPANIES = Array.from(new Set(Object.values(SECTOR_COMPANIES).flat()))
 
+function getMetricFragmentMatch(value: string) {
+  const boundaryPattern = /(?:\b(?:AND|OR)\b\s+|[><=!]+\s*|\(\s*)/gi
+  let start = 0
+  for (const match of value.matchAll(boundaryPattern)) {
+    start = match.index! + match[0].length
+  }
+  return { index: start, fragment: value.slice(start) }
+}
+
 /* Deterministic seed based on query so each unique query shows different companies */
 function querySeed(q: string): number {
   return q.trim().split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) & 0xffff, 0)
@@ -135,16 +144,14 @@ export default function Screener({
     setTimeout(() => textareaRef.current?.focus(), 0)
   }
 
-  const metricFragment = query.match(/(?:^|(?:AND|OR)\s+)([^><=!]*?)$/i)?.[1].trim() ?? ''
+  const metricFragment = getMetricFragmentMatch(query).fragment.trim()
   const metricSuggestions = metricFragment.length > 0
     ? ALL_METRICS.filter(metric => metric.toLowerCase().includes(metricFragment.toLowerCase()) && metric.toLowerCase() !== metricFragment.toLowerCase()).slice(0, 6)
     : []
   const insertMetricSuggestion = (metric: string) => {
     setQuery(current => {
-      const match = current.match(/(?:^|(?:AND|OR)\s+)([^><=!]*?)$/i)
-      if (!match || match.index === undefined) return `${current}${current && !current.endsWith(' ') ? ' ' : ''}${metric} `
-      const metricStart = match.index + match[0].length - match[1].length
-      return `${current.slice(0, metricStart)}${metric} `
+      const match = getMetricFragmentMatch(current)
+      return `${current.slice(0, match.index)}${metric} `
     })
     setTimeout(() => textareaRef.current?.focus(), 0)
   }
