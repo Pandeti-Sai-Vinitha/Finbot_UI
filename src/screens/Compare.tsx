@@ -177,6 +177,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
   const [showWLDropdown, setShowWLDropdown] = useState(false)
   const [newWLName, setNewWLName] = useState('')
   const [showNewWLInput, setShowNewWLInput] = useState(false)
+  const [deleteWatchlistId, setDeleteWatchlistId] = useState<number | null>(null)
   const wlDropRef = useRef<HTMLDivElement>(null)
 
   /* Add Stocks modal */
@@ -228,8 +229,14 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
 
   const createWatchlist = () => {
     if (!newWLName.trim()) return
-    onAdd({ name: newWLName.trim(), companies: [...(active?.companies ?? [])], metrics: DEFAULT_METRICS })
+    onAdd({ name: newWLName.trim(), companies: [], metrics: DEFAULT_METRICS })
     setNewWLName(''); setShowNewWLInput(false); setShowWLDropdown(false)
+  }
+
+  const confirmDeleteWatchlist = () => {
+    if (deleteWatchlistId === null) return
+    onDelete(deleteWatchlistId)
+    setDeleteWatchlistId(null)
   }
 
   const addCompany = (co: string) => {
@@ -309,7 +316,7 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
                 </button>
               ))}
               {watchlists.length > 1 && active.id !== watchlists[0].id && (
-                <button onClick={() => { onDelete(active.id); setShowWLDropdown(false) }}
+                <button onClick={() => { setDeleteWatchlistId(active.id); setShowWLDropdown(false) }}
                   style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', minHeight: 28, background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: DS.red, borderBottom: `1px solid ${DS.border}` }}
                   onMouseEnter={e => e.currentTarget.style.background = DS.redSoft}
                   onMouseLeave={e => e.currentTarget.style.background = 'none'}>
@@ -615,6 +622,21 @@ export default function Compare({ watchlists, activeWatchlistId, onAdd, onUpdate
                 style={{ width: '100%', padding: '5px 10px', minHeight: 26, borderRadius: 6, background: DS.accent, color: '#fff', border: `1px solid ${DS.accent}`, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                 Save Changes
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteWatchlistId !== null && (
+        <div onClick={() => setDeleteWatchlistId(null)} style={{ position: 'fixed', inset: 0, background: DS.overlay, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500 }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="delete-watchlist-title" onClick={event => event.stopPropagation()} style={{ width: 320, maxWidth: 'calc(100vw - 32px)', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 10, padding: 16, boxShadow: '0 12px 30px rgba(15,23,42,0.18)' }}>
+            <div id="delete-watchlist-title" style={{ fontSize: 13, fontWeight: 700, color: DS.text, marginBottom: 5 }}>Delete watchlist?</div>
+            <div style={{ fontSize: 11, color: DS.textSub, lineHeight: 1.5, marginBottom: 14 }}>
+              Delete <strong>{watchlists.find(watchlist => watchlist.id === deleteWatchlistId)?.name}</strong>? This cannot be undone.
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+              <button onClick={() => setDeleteWatchlistId(null)} style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.borderMed}`, background: DS.surface, color: DS.textSub, fontSize: 11, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={confirmDeleteWatchlist} style={{ padding: '4px 10px', minHeight: 26, borderRadius: 6, border: `1px solid ${DS.redBorder}`, background: DS.redSoft, color: DS.red, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Delete</button>
             </div>
           </div>
         </div>
