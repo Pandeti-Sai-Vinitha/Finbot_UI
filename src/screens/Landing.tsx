@@ -469,18 +469,35 @@ function RegisterForm({ role, onRoleChange, onLogin, onSignIn }: { role: UserRol
 
 function ForgotForm({ onSent, onBack }: { onSent: () => void; onBack: () => void }) {
   const [email, setEmail] = useState('')
-  const [error, setError] = useState('')
+  const [pass, setPass] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const submit = () => {
-    if (!email.trim() || !email.includes('@')) { setError('Enter a valid email address'); return }
-    setLoading(true); setTimeout(() => { setLoading(false); onSent() }, 1000)
+    const nextErrors: Record<string, string> = {}
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!normalizedEmail || !normalizedEmail.includes('@')) nextErrors.email = 'Enter a valid email address'
+    if (pass.length < 6) nextErrors.pass = 'Password must be at least 6 characters'
+    if (pass !== confirm) nextErrors.confirm = 'Passwords do not match'
+    if (!nextErrors.email && !registered.has(normalizedEmail)) nextErrors.email = 'No account found. Please register first.'
+    setErrors(nextErrors)
+    if (Object.keys(nextErrors).length > 0) return
+    setLoading(true)
+    setTimeout(() => {
+      const account = registered.get(normalizedEmail)
+      if (account) registered.set(normalizedEmail, { ...account, password: pass })
+      setLoading(false)
+      onSent()
+    }, 800)
   }
   return (
     <div>
-      <ModalHeader title="Reset password" sub="We'll send a reset link to your email" />
+      <ModalHeader title="Reset password" sub="Enter your email and choose a new password" />
       <div style={{ padding: '18px 22px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <Field label="Email" type="email" value={email} onChange={v => { setEmail(v); setError('') }} placeholder="you@example.com" icon={<HiOutlineEnvelope size={15} />} error={error} />
-        <PrimaryBtn label="Send Reset Link" onClick={submit} loading={loading} />
+        <Field label="Email address" type="email" value={email} onChange={v => { setEmail(v); setErrors(prev => ({ ...prev, email: '' })) }} placeholder="you@example.com" icon={<HiOutlineEnvelope size={15} />} error={errors.email} />
+        <Field label="New password" type="password" value={pass} onChange={v => { setPass(v); setErrors(prev => ({ ...prev, pass: '' })) }} placeholder="Min. 6 characters" icon={<HiOutlineLockClosed size={15} />} error={errors.pass} />
+        <Field label="Re-enter password" type="password" value={confirm} onChange={v => { setConfirm(v); setErrors(prev => ({ ...prev, confirm: '' })) }} placeholder="Repeat new password" icon={<HiOutlineLockClosed size={15} />} error={errors.confirm} />
+        <PrimaryBtn label="Reset Password" onClick={submit} loading={loading} />
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, background: 'none', border: 'none', color: C.textSub, fontSize: 12, cursor: 'pointer' }}>
           <HiOutlineArrowLeft size={12} /> Back to sign in
         </button>
@@ -492,13 +509,13 @@ function ForgotForm({ onSent, onBack }: { onSent: () => void; onBack: () => void
 function ForgotSent({ onBack }: { onBack: () => void }) {
   return (
     <div>
-      <ModalHeader title="Check your inbox" sub="Password reset link sent" />
+      <ModalHeader title="Password updated" sub="Your new password is ready to use" />
       <div style={{ padding: '12px 22px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, textAlign: 'center' }}>
         <div style={{ width: 44, height: 44, borderRadius: C.radius, background: C.greenSoft, border: `1px solid ${C.greenBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <HiOutlineCheckCircle size={22} color={C.green} />
         </div>
         <div style={{ fontSize: 13, color: C.textSub, lineHeight: 1.6, maxWidth: 280 }}>
-          If an account exists for that email, a reset link will arrive shortly. Check your spam folder too.
+          Your password has been reset. Sign in with your new password.
         </div>
         <button onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: C.accent, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 4 }}>
           <HiOutlineArrowLeft size={13} /> Back to sign in
