@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Landing from './screens/Landing'
 import AppShell from './screens/AppShell'
 
-export type Screen = 'dashboard' | 'chat' | 'admin' | 'compare' | 'screener' | 'company-detail'
+export type Screen = 'dashboard' | 'chat' | 'admin' | 'compare' | 'screener' | 'earnings' | 'company-detail'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
@@ -64,14 +64,15 @@ const mkTs = () => {
 
 export const DEFAULT_BOT_CONFIG_ID = 1
 export const DEFAULT_WATCHLIST_ID = 1000
+const BOT_CONFIG_STORAGE_KEY = 'finbot_bot_configs_v1'
 
 function makeDefaultConfig(): BotConfig {
   const now = mkTs()
   return {
     id: DEFAULT_BOT_CONFIG_ID,
     name: 'FinBot Default',
-    sectors: ['Information Technology', 'Financial Services'],
-    companies: ['TCS', 'Infosys', 'HDFC Bank', 'ICICI Bank'],
+    sectors: [],
+    companies: [],
     timePeriod: 'annual',
     years: ['2023', '2024', '2025'],
     quarters: [],
@@ -81,6 +82,28 @@ function makeDefaultConfig(): BotConfig {
     createdAt: now,
     updatedAt: now,
   }
+}
+
+function loadBotConfigState(email: string): { botConfigs: BotConfig[]; activeBotConfigId: number | null } {
+  try {
+    const key = `${BOT_CONFIG_STORAGE_KEY}_${encodeURIComponent(email.trim().toLowerCase())}`
+    const saved = localStorage.getItem(key)
+    if (saved) {
+      const parsed = JSON.parse(saved) as { botConfigs?: BotConfig[]; activeBotConfigId?: number | null }
+      if (Array.isArray(parsed.botConfigs) && parsed.botConfigs.length > 0) {
+        const activeId = parsed.activeBotConfigId
+        return {
+          botConfigs: parsed.botConfigs,
+          activeBotConfigId: typeof activeId === 'number' && parsed.botConfigs.some(config => config.id === activeId)
+            ? activeId
+            : null,
+        }
+      }
+    }
+  } catch {
+    // Invalid or unavailable browser storage starts this account with a fresh config.
+  }
+  return { botConfigs: [makeDefaultConfig()], activeBotConfigId: DEFAULT_BOT_CONFIG_ID }
 }
 
 function makeDefaultWatchlist(): WatchlistItem {
@@ -103,6 +126,16 @@ export default function App() {
   // AI Chat personalization — independent from Watchlist
   const [botConfigs, setBotConfigs] = useState<BotConfig[]>(() => [makeDefaultConfig()])
   const [activeBotConfigId, setActiveBotConfigId] = useState<number | null>(DEFAULT_BOT_CONFIG_ID)
+
+  useEffect(() => {
+    if (!user) return
+    try {
+      const key = `${BOT_CONFIG_STORAGE_KEY}_${encodeURIComponent(user.email.trim().toLowerCase())}`
+      localStorage.setItem(key, JSON.stringify({ botConfigs, activeBotConfigId }))
+    } catch {
+      // Keep the in-memory config usable if browser storage is unavailable.
+    }
+  }, [user, botConfigs, activeBotConfigId])
 
   // Watchlist — independent from AI Chat personalization
   const [watchlists, setWatchlists] = useState<WatchlistItem[]>(() => [makeDefaultWatchlist()])
@@ -212,7 +245,15 @@ export default function App() {
     setChatSessions(prev => prev.map(s => s.id === id ? fn(s) : s))
   }
 
-  if (!user) return <Landing onLogin={(u) => { setUser(u); setScreen(u.role === 'analyst' ? 'screener' : 'admin') }} />
+  const handleLogin = (nextUser: User) => {
+    const savedConfig = loadBotConfigState(nextUser.email)
+    setBotConfigs(savedConfig.botConfigs)
+    setActiveBotConfigId(savedConfig.activeBotConfigId)
+    setUser(nextUser)
+    setScreen(nextUser.role === 'analyst' ? 'screener' : 'admin')
+  }
+
+  if (!user) return <Landing onLogin={handleLogin} />
 
   return (
     <AppShell

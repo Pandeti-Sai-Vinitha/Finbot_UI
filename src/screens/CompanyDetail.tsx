@@ -225,7 +225,7 @@ export default function CompanyDetail({ company, onBack }: Props) {
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
   const [activeTab, setActiveTab] = useState('peers')
   const [basis, setBasis] = useState<Basis>('consolidated')
-  const [selectedNews, setSelectedNews] = useState<{ title: string; summary: string; date: string; documents: string[] } | null>(null)
+  const [selectedNews, setSelectedNews] = useState<{ title: string; summary: string; date: string } | null>(null)
   const annual = getStatementData(company, basis)
   const quarterly = getStatementData(company, basis, true)
   const sector = SECTORS.find(name => (SECTOR_COMPANIES[name] ?? []).includes(company)) ?? 'Services'
@@ -244,19 +244,16 @@ export default function CompanyDetail({ company, onBack }: Props) {
       title: `${company} reports resilient ${basis} performance in the latest financial year`,
       summary: `${company} continues to show disciplined execution, with margin stability and steady cash generation supporting the ${basis} earnings profile.`,
       date: '23 Sep 2026',
-      documents: QUARTERS.map(quarter => `${quarter} FY${YEARS[YEARS.length - 1].slice(2)}`),
     },
     {
       title: `${company} remains in focus as ${basis} earnings and margins are tracked`,
       summary: `The market is monitoring ${company}'s operating leverage and working-capital discipline as analysts compare the most recent ${basis} results against peer benchmarks.`,
       date: '21 Sep 2026',
-      documents: QUARTERS.map(quarter => `${quarter} FY${YEARS[YEARS.length - 2].slice(2)}`),
     },
     {
       title: `Analysts review ${company}'s ${basis} cash generation and balance sheet strength`,
       summary: `Investors are focusing on balance-sheet resilience, asset efficiency, and the consistency of ${basis} cash conversion within the current earnings cycle.`,
       date: '18 Sep 2026',
-      documents: QUARTERS.map(quarter => `${quarter} FY${YEARS[YEARS.length - 3].slice(2)}`),
     },
   ]
   const tabs = [
@@ -314,23 +311,6 @@ export default function CompanyDetail({ company, onBack }: Props) {
                 <div style={{ color: colors.muted, fontSize: 10, marginBottom: 8 }}>{selectedNews.date} · FinBot Research</div>
                 <h3 style={{ margin: '0 0 10px', fontSize: 18, lineHeight: 1.35, color: colors.text }}>{selectedNews.title}</h3>
                 <p style={{ margin: 0, color: colors.sub, fontSize: 12, lineHeight: 1.75 }}>{selectedNews.summary}</p>
-              </div>
-              <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
-                  <div style={{ color: colors.text, fontSize: 12, fontWeight: 700 }}>Investor presentations</div>
-                  <div style={{ color: colors.muted, fontSize: 10 }}>{selectedNews.documents.length} available</div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
-                  {selectedNews.documents.map(doc => (
-                    <div key={doc} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: colors.soft, border: `1px solid ${colors.border}`, borderRadius: 8, padding: '8px 9px' }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ color: colors.text, fontSize: 10, fontWeight: 700 }}>{doc}</div>
-                        <div style={{ color: colors.muted, fontSize: 9 }}>PDF download</div>
-                      </div>
-                      <button onClick={() => downloadPresentation(company, doc, basis)} style={{ border: `1px solid ${colors.accentBorder}`, borderRadius: 5, background: colors.accentSoft, color: colors.accent, padding: '4px 7px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>Download</button>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </div>

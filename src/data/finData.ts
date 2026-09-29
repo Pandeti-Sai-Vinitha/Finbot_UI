@@ -153,6 +153,8 @@ const CO_BASE: Record<string, [number, number, number, number, number]> = {
   'Vardhman Textiles':      [7500,   8,  14, 8,  14000],
 }
 
+export const SEEDED_FINANCIAL_COMPANIES = Object.keys(CO_BASE)
+
 function buildAnnualRow(year: string, idx: number, base: [number,number,number,number,number]): FinRow {
   const [s0, g, opm, nm, a0] = base
   const sales = Math.round(s0 * Math.pow(1 + g / 100, idx))

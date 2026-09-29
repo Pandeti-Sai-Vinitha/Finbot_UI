@@ -4,7 +4,7 @@ import {
   HiOutlinePlus, HiOutlineTrash, HiOutlineChatBubbleLeftRight, HiOutlinePencilSquare,
   HiOutlineSquares2X2, HiOutlineBookmark, HiOutlineCog6Tooth, HiOutlinePower,
   HiOutlineChevronLeft, HiOutlineChevronRight, HiOutlineAdjustmentsHorizontal,
-  HiOutlineSparkles,
+  HiOutlineSparkles, HiOutlineChartBar,
 } from 'react-icons/hi2'
 import { RiSparklingLine } from 'react-icons/ri'
 import finbotLogo from '../../assets/FinBot_Logo.png'
@@ -13,6 +13,7 @@ import AIChat from './AIChat'
 import Admin, { AdminDashboard } from './Admin'
 import Compare from './Compare'
 import Screener from './Screener'
+import EarningsTracker from './EarningsTracker'
 import CompanyDetail from './CompanyDetail.tsx'
 
 interface Props {
@@ -58,6 +59,7 @@ const ANALYST_NAV: { id: Screen; label: string; icon: React.ElementType }[] = [
   { id: 'chat',      label: 'AI Chat',   icon: HiOutlineChatBubbleLeftRight },
   { id: 'compare',   label: 'Watchlist', icon: HiOutlineBookmark },
   { id: 'screener',  label: 'Screener',  icon: HiOutlineAdjustmentsHorizontal },
+  { id: 'earnings',  label: 'Earnings Tracker', icon: HiOutlineChartBar },
 ]
 
 const DS = {
@@ -348,6 +350,7 @@ export default function AppShell({
         )}
         {screen === 'chat' && (
           <AIChat
+            userEmail={user.email}
             botConfigs={botConfigs}
             activeBotConfigId={activeBotConfigId}
             onSetActiveBotConfig={onSetActiveBotConfig}
@@ -394,6 +397,7 @@ export default function AppShell({
             onRunComplete={onScreenerRun}
           />
         )}
+        {screen === 'earnings' && user.role === 'analyst' && <EarningsTracker onSelectCompany={onOpenCompany} />}
         {screen === 'company-detail' && selectedCompany && (
           <CompanyDetail company={selectedCompany} onBack={() => navigate('dashboard')} />
         )}

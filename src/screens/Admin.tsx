@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import {
-  HiOutlineArrowDownTray, HiOutlineSparkles, HiOutlineNewspaper,
+  HiOutlineArrowDownTray, HiOutlineNewspaper,
   HiOutlineArrowPath, HiOutlinePlay, HiOutlineStop,
   HiOutlineArrowPathRoundedSquare, HiOutlinePause,
   HiOutlineUsers, HiOutlineBookmark, HiOutlineAdjustmentsHorizontal,
@@ -13,7 +13,8 @@ import {
 import { BsRobot } from 'react-icons/bs'
 import type { WatchlistItem, BotConfig } from '../App'
 import {
-  SECTORS, SECTOR_COMPANIES, ANNUAL_METRIC_GROUPS, FREQUENTLY_USED_METRICS, getAnnualData,
+  SECTORS, SECTOR_COMPANIES, ANNUAL_METRIC_GROUPS, FREQUENTLY_USED_METRICS, getAnnualData, getQuarterlyData,
+  SEEDED_FINANCIAL_COMPANIES,
 } from '../data/finData'
 import { DEFAULT_BOT_CONFIG_ID } from '../App'
 
@@ -49,8 +50,7 @@ type JobState = 'idle' | 'running' | 'completed' | 'failed' | 'stopped'
 interface Job { id: string; label: string; Icon: React.ElementType; state: JobState; progress: number; lastRun: string; color: string; bg: string; border: string }
 const initJobs: Job[] = [
   { id: 'fetch',   label: 'Fetch Filings',  Icon: HiOutlineArrowDownTray, state: 'idle',      progress: 0,   lastRun: '2h ago', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-  { id: 'extract', label: 'Extract Metrics', Icon: HiOutlineSparkles,      state: 'completed', progress: 100, lastRun: '1h ago', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-  { id: 'news',    label: 'Collect News',    Icon: HiOutlineNewspaper,     state: 'idle',      progress: 0,   lastRun: '3h ago', color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
+  { id: 'presentations', label: 'Collect Investor Presentations', Icon: HiOutlineNewspaper, state: 'idle', progress: 0, lastRun: '—', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
 ]
 const stateLabel:  Record<JobState, string> = { idle: 'Idle', running: 'Running', completed: 'Done', failed: 'Failed', stopped: 'Stopped' }
 const stateColor:  Record<JobState, string> = { idle: '#94a3b8', running: '#2563eb', completed: '#16a34a', failed: '#dc2626', stopped: '#d97706' }
@@ -66,7 +66,7 @@ const seedLogs: LogEntry[] = [
   { t: '11:30:05', msg: 'NSE connection established', type: 'success' },
   { t: '11:30:08', msg: 'Fetching Q3 FY2025 filings…', type: 'info' },
   { t: '11:30:22', msg: 'Extracting financial metrics from PDF', type: 'info' },
-  { t: '11:30:40', msg: 'Metrics extraction completed ✓', type: 'success' },
+  { t: '11:30:40', msg: 'Investor presentation collection completed ✓', type: 'success' },
   { t: '11:30:48', msg: 'Fetching NSE announcements — IT sector', type: 'info' },
   { t: '11:31:00', msg: 'News ingestion — 124 articles indexed', type: 'success' },
   { t: '11:31:30', msg: 'Scheduler: Next fetch cycle in 60 minutes', type: 'info' },
@@ -127,6 +127,7 @@ const ALL_CO_LIST: { name: string; sector: string }[] = (() => {
 })()
 
 const AD_PAGE = 8
+const SEEDED_FINANCIAL_COMPANY_SET = new Set(SEEDED_FINANCIAL_COMPANIES)
 
 function AdminAvatar({ name, size = 34 }: { name: string; size?: number }) {
   return (
@@ -180,6 +181,43 @@ function AdminCompanyTable({ companies }: { companies: { name: string; sector: s
       </div>
     })}
   </div></div>
+}
+
+function getFilingSummary(name: string) {
+  const hash = Array.from(name).reduce((value, character) => value * 31 + character.charCodeAt(0), 0)
+  const code = name.toUpperCase().replace(/\b(LIMITED|LTD|INDUSTRIES|INDUSTRY|CORPORATION|CORP)\b/g, '').replace(/[^A-Z0-9]/g, '').slice(0, 12)
+  return {
+    scripCode: code,
+    consolidated: 5 + (Math.abs(hash) % 16),
+    standalone: 5 + (Math.abs(hash * 7) % 16),
+  }
+}
+
+function FetchedCompaniesTab({ companies }: { companies: { name: string; sector: string }[] }) {
+  return (
+    <div style={{ height: '100%', minHeight: 0, overflow: 'auto' }}>
+      <div style={{ minWidth: 720 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(190px, 1.5fr) minmax(130px, 1fr) minmax(150px, 1fr) repeat(2, minmax(130px, 0.9fr))', position: 'sticky', top: 0, zIndex: 1, background: DS.surfaceHover, borderBottom: `1px solid ${DS.borderMed}`, color: DS.textMuted, fontSize: 9, fontWeight: 700 }}>
+          {['Company Name', 'Scrip Code', 'Sector', 'Consolidated Filings', 'Standalone Filings'].map((label, index) => (
+            <div key={label} style={{ padding: '10px 12px', textAlign: index > 2 ? 'right' : 'left' }}>{label}</div>
+          ))}
+        </div>
+        {companies.map((company, index) => {
+          const summary = getFilingSummary(company.name)
+          return (
+            <div key={company.name} style={{ display: 'grid', gridTemplateColumns: 'minmax(190px, 1.5fr) minmax(130px, 1fr) minmax(150px, 1fr) repeat(2, minmax(130px, 0.9fr))', alignItems: 'center', borderBottom: `1px solid ${DS.border}`, background: index % 2 ? '#fbfbfc' : DS.surface, color: DS.text, fontSize: 11 }}>
+              <div style={{ padding: '10px 12px', fontWeight: 600 }}>{company.name}</div>
+              <div style={{ padding: '10px 12px', color: DS.accent, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{summary.scripCode}</div>
+              <div style={{ padding: '10px 12px', color: DS.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{company.sector}</div>
+              <div style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{summary.consolidated}</div>
+              <div style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{summary.standalone}</div>
+            </div>
+          )
+        })}
+        {companies.length === 0 && <div style={{ padding: 24, textAlign: 'center', color: DS.textFaint, fontSize: 11 }}>No companies have been fetched yet.</div>}
+      </div>
+    </div>
+  )
 }
 
 /* Nifty 500 set for admin — first 100 companies */
@@ -326,6 +364,151 @@ export function AdminDashboard({ botConfigs }: { botConfigs: BotConfig[] }) {
   )
 }
 
+function MissingCompaniesTab({ companies, activeCompany, isFetching, progress, completedCount, totalCount, totalProgress, onStart, onStop }: {
+  companies: { name: string; sector: string }[]
+  activeCompany: string | null
+  isFetching: boolean
+  progress: number
+  completedCount: number
+  totalCount: number
+  totalProgress: number
+  onStart: () => void
+  onStop: () => void
+}) {
+  const [search, setSearch] = useState('')
+  const filteredCompanies = companies.filter(company =>
+    company.name === activeCompany || `${company.name} ${company.sector}`.toLowerCase().includes(search.trim().toLowerCase()),
+  )
+
+  return (
+    <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: DS.text }}>Untracked Companies</div>
+          <div style={{ fontSize: 11, color: DS.textSub, marginTop: 2 }}>Companies awaiting filing metrics</div>
+        </div>
+        <span style={{ fontSize: 10, color: DS.amber, background: DS.amberSoft, border: `1px solid ${DS.amberBorder}`, borderRadius: 6, padding: '4px 8px', fontWeight: 600 }}>{companies.length} untracked</span>
+        <button onClick={isFetching ? onStop : onStart} disabled={!isFetching && !activeCompany && companies.length === 0}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, minWidth: 78, padding: '6px 10px', borderRadius: 6, border: `1px solid ${isFetching ? DS.redBorder : DS.accentBorder}`, background: isFetching ? DS.redSoft : DS.accent, color: isFetching ? DS.red : '#fff', fontSize: 10, fontWeight: 600, cursor: !isFetching && !activeCompany && companies.length === 0 ? 'not-allowed' : 'pointer', opacity: !isFetching && !activeCompany && companies.length === 0 ? 0.5 : 1 }}>
+          {isFetching ? <><HiOutlineStop size={12} /> Stop</> : <><HiOutlinePlay size={12} /> Start</>}
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 7, background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 7, padding: '7px 10px' }}>
+          <HiOutlineMagnifyingGlass size={13} color={DS.textFaint} />
+          <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search untracked companies…" style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 11, color: DS.text }} />
+        </div>
+        <span style={{ fontSize: 10, color: DS.textMuted, whiteSpace: 'nowrap' }}>{completedCount} of {totalCount} fetched</span>
+      </div>
+
+      {totalCount > 0 && (
+        <div style={{ flexShrink: 0, background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 7, padding: '9px 11px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, fontSize: 10, color: DS.textSub }}>
+            <span>{isFetching && activeCompany ? `Fetching ${activeCompany}` : activeCompany ? `Paused at ${activeCompany}` : 'Fetch run complete'}</span>
+            <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{totalProgress}%</span>
+          </div>
+          <div style={{ height: 5, borderRadius: 5, background: DS.surfaceHover, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${totalProgress}%`, borderRadius: 5, background: DS.accent, transition: 'width 0.15s linear' }} />
+          </div>
+        </div>
+      )}
+
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', position: 'sticky', top: 0, zIndex: 1, background: DS.surfaceHover, borderBottom: `1px solid ${DS.borderMed}`, fontSize: 9, fontWeight: 700, color: DS.textFaint }}>
+          <div style={{ padding: '9px 12px' }}>COMPANY</div><div style={{ padding: '9px 12px' }}>SECTOR</div>
+        </div>
+        {filteredCompanies.map((company, index) => {
+          const isActive = activeCompany === company.name
+          return <div key={company.name} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center', borderBottom: `1px solid ${DS.border}`, background: index % 2 ? '#fbfbfc' : DS.surface, fontSize: 11 }}>
+            <div style={{ padding: '9px 12px', color: DS.text, fontWeight: 600 }}>
+              {company.name}
+              {isActive && <div style={{ height: 3, marginTop: 6, borderRadius: 3, background: DS.surfaceHover, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${progress}%`, background: isFetching ? DS.accent : DS.amber, transition: 'width 0.15s linear' }} />
+              </div>}
+            </div>
+            <div style={{ padding: '9px 12px', color: DS.textMuted }}>{company.sector}</div>
+          </div>
+        })}
+        {filteredCompanies.length === 0 && <div style={{ padding: 24, textAlign: 'center', color: DS.textFaint, fontSize: 11 }}>{companies.length === 0 ? 'No untracked companies.' : 'No companies match this search.'}</div>}
+      </div>
+    </div>
+  )
+}
+
+function InvestorPresentationsTab({ companies, collectedCompanies, activeCompany, isCollecting, progress, completedCount, totalCount, totalProgress, onStart, onStop }: {
+  companies: { name: string; sector: string }[]
+  collectedCompanies: Set<string>
+  activeCompany: string | null
+  isCollecting: boolean
+  progress: number
+  completedCount: number
+  totalCount: number
+  totalProgress: number
+  onStart: () => void
+  onStop: () => void
+}) {
+  const rowsContainerRef = useRef<HTMLDivElement>(null)
+  const activeRowRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const container = rowsContainerRef.current
+    const activeRow = activeRowRef.current
+    if (!container || !activeRow) return
+    const containerRect = container.getBoundingClientRect()
+    const rowRect = activeRow.getBoundingClientRect()
+    if (rowRect.top < containerRect.top) {
+      container.scrollTo({ top: container.scrollTop + rowRect.top - containerRect.top - 8, behavior: 'smooth' })
+    } else if (rowRect.bottom > containerRect.bottom) {
+      container.scrollTo({ top: container.scrollTop + rowRect.bottom - containerRect.bottom + 8, behavior: 'smooth' })
+    }
+  }, [activeCompany])
+
+  return (
+    <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: DS.text }}>Investor Presentations</div>
+          <div style={{ fontSize: 11, color: DS.textSub, marginTop: 2 }}>Collect company investor presentation PDFs one by one</div>
+        </div>
+        <span style={{ fontSize: 10, color: DS.textMuted, whiteSpace: 'nowrap' }}>{completedCount} of {totalCount} collected</span>
+        <button onClick={isCollecting ? onStop : onStart} disabled={!isCollecting && !activeCompany && companies.every(company => collectedCompanies.has(company.name))}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, minWidth: 78, padding: '6px 10px', borderRadius: 6, border: `1px solid ${isCollecting ? DS.redBorder : DS.accentBorder}`, background: isCollecting ? DS.redSoft : DS.accent, color: isCollecting ? DS.red : '#fff', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>
+          {isCollecting ? <><HiOutlineStop size={12} /> Stop</> : <><HiOutlinePlay size={12} /> Start</>}
+        </button>
+      </div>
+      {totalCount > 0 && (
+        <div style={{ flexShrink: 0, background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 7, padding: '9px 11px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, fontSize: 10, color: DS.textSub }}>
+            <span>{isCollecting && activeCompany ? `Collecting ${activeCompany}` : activeCompany ? `Paused at ${activeCompany}` : 'Collection complete'}</span>
+            <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{totalProgress}%</span>
+          </div>
+          <div style={{ height: 5, borderRadius: 5, background: DS.surfaceHover, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${totalProgress}%`, borderRadius: 5, background: DS.accent, transition: 'width 0.15s linear' }} />
+          </div>
+        </div>
+      )}
+      <div ref={rowsContainerRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', position: 'sticky', top: 0, zIndex: 1, background: DS.surfaceHover, borderBottom: `1px solid ${DS.borderMed}`, fontSize: 9, fontWeight: 700, color: DS.textFaint }}>
+          <div style={{ padding: '9px 12px' }}>COMPANY</div><div style={{ padding: '9px 12px' }}>SECTOR</div><div style={{ padding: '9px 12px' }}>INVESTOR PRESENTATION</div>
+        </div>
+        {companies.map((company, index) => {
+          const collected = collectedCompanies.has(company.name)
+          const isActive = activeCompany === company.name
+          return <div key={company.name} ref={isActive ? activeRowRef : null} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', alignItems: 'center', borderBottom: `1px solid ${DS.border}`, background: index % 2 ? '#fbfbfc' : DS.surface, fontSize: 11 }}>
+            <div style={{ padding: '9px 12px', color: DS.text, fontWeight: 600 }}>
+              {company.name}
+              {isActive && <div style={{ height: 3, marginTop: 6, borderRadius: 3, background: DS.surfaceHover, overflow: 'hidden' }}><div style={{ height: '100%', width: `${progress}%`, background: isCollecting ? DS.accent : DS.amber, transition: 'width 0.15s linear' }} /></div>}
+            </div>
+            <div style={{ padding: '9px 12px', color: DS.textMuted }}>{company.sector}</div>
+            <div style={{ padding: '9px 12px', color: collected ? DS.green : DS.textFaint }}>{collected ? `${company.name} Investor Presentation.pdf · Collected` : 'Waiting'}</div>
+          </div>
+        })}
+      </div>
+    </div>
+  )
+}
+
 /* ─── Props ──────────────────────────────────────────────────────── */
 interface Props {
   watchlists: WatchlistItem[]
@@ -336,7 +519,31 @@ interface Props {
 
 /* ─── Main component ─────────────────────────────────────────────── */
 export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpdateBotConfig }: Props) {
-  const [activeTab, setActiveTab] = useState<'console' | 'users' | 'defaults'>('console')
+  const [activeTab, setActiveTab] = useState<'console' | 'users' | 'defaults' | 'untracked'>('console')
+  const [selectedJobId, setSelectedJobId] = useState('fetch')
+  const [consoleView, setConsoleView] = useState<'terminal' | 'table'>('terminal')
+  const [fetchedMissingCompanies, setFetchedMissingCompanies] = useState<Set<string>>(new Set())
+  const [fetchQueue, setFetchQueue] = useState<string[]>([])
+  const [activeFetchCompany, setActiveFetchCompany] = useState<string | null>(null)
+  const [isFetchingCompany, setIsFetchingCompany] = useState(false)
+  const [companyFetchProgress, setCompanyFetchProgress] = useState(0)
+  const [fetchTotalCount, setFetchTotalCount] = useState(0)
+  const [fetchCompletedCount, setFetchCompletedCount] = useState(0)
+  const [collectedPresentations, setCollectedPresentations] = useState<Set<string>>(new Set())
+  const [presentationQueue, setPresentationQueue] = useState<string[]>([])
+  const [activePresentationCompany, setActivePresentationCompany] = useState<string | null>(null)
+  const [isCollectingPresentations, setIsCollectingPresentations] = useState(false)
+  const [presentationProgress, setPresentationProgress] = useState(0)
+  const [presentationTotalCount, setPresentationTotalCount] = useState(0)
+  const [presentationCompletedCount, setPresentationCompletedCount] = useState(0)
+  const missingCompanies = ALL_CO_LIST.filter(company => !SEEDED_FINANCIAL_COMPANY_SET.has(company.name) && !fetchedMissingCompanies.has(company.name))
+  const fetchedCompanies = ALL_CO_LIST.filter(company => SEEDED_FINANCIAL_COMPANY_SET.has(company.name) || fetchedMissingCompanies.has(company.name))
+  const presentationTotalProgress = presentationTotalCount > 0
+    ? Math.round(((presentationCompletedCount + (activePresentationCompany ? presentationProgress / 100 : 0)) / presentationTotalCount) * 100)
+    : 0
+  const totalFetchProgress = fetchTotalCount > 0
+    ? Math.round(((fetchCompletedCount + (activeFetchCompany ? companyFetchProgress / 100 : 0)) / fetchTotalCount) * 100)
+    : 0
 
   /* Console state */
   const [jobs, setJobs] = useState(initJobs)
@@ -346,13 +553,13 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
   useEffect(() => {
     const iv = setInterval(() => {
       setJobs(prev => prev.map(j => {
-        if (j.state !== 'running') return j
+        if (j.state !== 'running' || (j.id === 'fetch' && activeFetchCompany) || (j.id === 'presentations' && activePresentationCompany)) return j
         const np = Math.min(j.progress + Math.random() * 7, 100)
         return { ...j, progress: np, state: np >= 100 ? 'completed' : 'running' }
       }))
     }, 600)
     return () => clearInterval(iv)
-  }, [])
+  }, [activeFetchCompany, activePresentationCompany])
 
   useEffect(() => {
     logsRef.current?.scrollTo({ top: logsRef.current.scrollHeight, behavior: 'smooth' })
@@ -362,21 +569,150 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
     const t = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     setLogs(prev => [...prev, { t, msg, type }])
   }
-  const startJob = (id: string) => {
+
+  const startCompanyFetch = (restarted = false) => {
+    if (activeFetchCompany && fetchQueue.length > 0) {
+      setIsFetchingCompany(true)
+      setJobs(prev => prev.map(job => job.id === 'fetch' ? { ...job, state: 'running' } : job))
+      addLog(`Fetch resumed: ${activeFetchCompany}`, 'info')
+      return
+    }
+    if (activeFetchCompany || missingCompanies.length === 0) return
+    const queue = missingCompanies.map(company => company.name)
+    if (queue.length === 0) return
+    setFetchQueue(queue)
+    setActiveFetchCompany(queue[0])
+    setIsFetchingCompany(true)
+    setCompanyFetchProgress(0)
+    setFetchTotalCount(queue.length)
+    setFetchCompletedCount(0)
+    setJobs(prev => prev.map(job => job.id === 'fetch' ? { ...job, state: 'running', progress: 0 } : job))
+    addLog(`${restarted ? 'Fetch restarted' : 'Fetch started'}: ${queue.length} companies`, 'info')
+  }
+
+  const startPresentationCollection = (restarted = false) => {
+    if (activePresentationCompany && presentationQueue.length > 0) {
+      setIsCollectingPresentations(true)
+      setJobs(prev => prev.map(job => job.id === 'presentations' ? { ...job, state: 'running' } : job))
+      addLog(`Presentation collection resumed: ${activePresentationCompany}`, 'info')
+      return
+    }
+    if (activePresentationCompany) return
+    const queue = ALL_CO_LIST.filter(company => !collectedPresentations.has(company.name)).map(company => company.name)
+    if (queue.length === 0) return
+    setPresentationQueue(queue)
+    setActivePresentationCompany(queue[0])
+    setIsCollectingPresentations(true)
+    setPresentationProgress(0)
+    setPresentationTotalCount(queue.length)
+    setPresentationCompletedCount(0)
+    setJobs(prev => prev.map(job => job.id === 'presentations' ? { ...job, state: 'running', progress: 0 } : job))
+    addLog(`${restarted ? 'Presentation collection restarted' : 'Presentation collection started'}: ${queue.length} companies`, 'info')
+  }
+
+  const stopCompanyFetch = () => {
+    setIsFetchingCompany(false)
+    setJobs(prev => prev.map(job => job.id === 'fetch' ? { ...job, state: 'stopped' } : job))
+    if (activeFetchCompany) addLog(`Fetch paused: ${activeFetchCompany}`, 'error')
+  }
+
+  const stopPresentationCollection = () => {
+    setIsCollectingPresentations(false)
+    setJobs(prev => prev.map(job => job.id === 'presentations' ? { ...job, state: 'stopped' } : job))
+    if (activePresentationCompany) addLog(`Presentation collection paused: ${activePresentationCompany}`, 'error')
+  }
+
+  const startJob = (id: string, restarted = false) => {
     const job = jobs.find(j => j.id === id)!
+    if (id === 'fetch') {
+      startCompanyFetch(restarted)
+      return
+    }
+    if (id === 'presentations') {
+      startPresentationCollection(restarted)
+      return
+    }
     setJobs(prev => prev.map(j => j.id === id ? { ...j, state: 'running', progress: 0 } : j))
-    addLog(`Job started: ${job.label}`, 'info')
+    addLog(`Job ${restarted ? 'restarted' : 'started'}: ${job.label}`, 'info')
   }
   const stopJob = (id: string) => {
     const job = jobs.find(j => j.id === id)!
+    if (id === 'fetch' && activeFetchCompany) return stopCompanyFetch()
+    if (id === 'presentations' && activePresentationCompany) return stopPresentationCollection()
     setJobs(prev => prev.map(j => j.id === id ? { ...j, state: 'stopped' } : j))
     addLog(`Job stopped: ${job.label}`, 'error')
   }
   const restartJob = (id: string) => {
-    const job = jobs.find(j => j.id === id)!
-    setJobs(prev => prev.map(j => j.id === id ? { ...j, state: 'running', progress: 0 } : j))
-    addLog(`Job restarted: ${job.label}`, 'info')
+    startJob(id, true)
   }
+
+  useEffect(() => {
+    if (!isFetchingCompany || !activeFetchCompany) return
+    const timer = setInterval(() => setCompanyFetchProgress(progress => Math.min(progress + 10, 100)), 120)
+    return () => clearInterval(timer)
+  }, [isFetchingCompany, activeFetchCompany])
+
+  useEffect(() => {
+    if (!isCollectingPresentations || !activePresentationCompany) return
+    const timer = setInterval(() => setPresentationProgress(progress => Math.min(progress + 10, 100)), 120)
+    return () => clearInterval(timer)
+  }, [isCollectingPresentations, activePresentationCompany])
+
+  useEffect(() => {
+    if (!activeFetchCompany || companyFetchProgress < 100) return
+    const completedCompany = activeFetchCompany
+    getAnnualData(completedCompany)
+    getQuarterlyData(completedCompany)
+    setFetchedMissingCompanies(prev => new Set([...prev, completedCompany]))
+    setFetchCompletedCount(count => count + 1)
+    addLog(`Filing metrics added: ${completedCompany}`, 'success')
+    const remaining = fetchQueue.slice(1)
+    setFetchQueue(remaining)
+    if (remaining.length > 0) {
+      setActiveFetchCompany(remaining[0])
+      setCompanyFetchProgress(0)
+    } else {
+      setActiveFetchCompany(null)
+      setCompanyFetchProgress(0)
+      setIsFetchingCompany(false)
+      setJobs(prev => prev.map(job => job.id === 'fetch' ? { ...job, state: 'completed', progress: 100 } : job))
+      addLog('Fetch Filings completed', 'success')
+    }
+  }, [activeFetchCompany, companyFetchProgress, fetchQueue])
+
+  useEffect(() => {
+    if (!activePresentationCompany || presentationProgress < 100) return
+    const completedCompany = activePresentationCompany
+    setCollectedPresentations(prev => new Set([...prev, completedCompany]))
+    setPresentationCompletedCount(count => count + 1)
+    addLog(`Investor presentation collected: ${completedCompany}`, 'success')
+    const remaining = presentationQueue.slice(1)
+    setPresentationQueue(remaining)
+    if (remaining.length > 0) {
+      setActivePresentationCompany(remaining[0])
+      setPresentationProgress(0)
+    } else {
+      setActivePresentationCompany(null)
+      setPresentationProgress(0)
+      setIsCollectingPresentations(false)
+      setJobs(prev => prev.map(job => job.id === 'presentations' ? { ...job, state: 'completed', progress: 100 } : job))
+      addLog('Investor presentation collection completed', 'success')
+    }
+  }, [activePresentationCompany, presentationProgress, presentationQueue])
+
+  useEffect(() => {
+    if (fetchTotalCount === 0) return
+    setJobs(prev => prev.map(job => job.id === 'fetch' ? {
+      ...job,
+      state: isFetchingCompany ? 'running' : activeFetchCompany ? 'stopped' : fetchCompletedCount >= fetchTotalCount ? 'completed' : job.state,
+      progress: totalFetchProgress,
+    } : job))
+    setJobs(prev => prev.map(job => job.id === 'presentations' ? {
+      ...job,
+      state: isCollectingPresentations ? 'running' : activePresentationCompany ? 'stopped' : presentationCompletedCount >= presentationTotalCount && presentationTotalCount > 0 ? 'completed' : job.state,
+      progress: presentationTotalProgress,
+    } : job))
+  }, [activeFetchCompany, activePresentationCompany, fetchCompletedCount, fetchTotalCount, isCollectingPresentations, isFetchingCompany, presentationCompletedCount, presentationTotalCount, presentationTotalProgress, totalFetchProgress])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: DS.bg, fontFamily: 'Inter, sans-serif' }}>
@@ -407,6 +743,7 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
             { id: 'console',  label: 'Operations Console', icon: HiOutlineCommandLine },
             { id: 'users',    label: 'Users & Data',        icon: HiOutlineUserGroup },
             { id: 'defaults', label: 'Default Config',      icon: HiOutlineBookmark },
+            { id: 'untracked', label: 'Untracked Companies', icon: HiOutlineFunnel },
           ] as const).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', background: 'none', border: 'none', borderBottom: activeTab === tab.id ? `2px solid ${DS.accent}` : '2px solid transparent', color: activeTab === tab.id ? DS.accent : DS.textSub, fontSize: 11, fontWeight: activeTab === tab.id ? 700 : 400, cursor: 'pointer', transition: 'all 0.12s' }}>
@@ -419,12 +756,12 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
 
       {/* ── Operations Console ── */}
       {activeTab === 'console' && (
-        <div style={{ flex: 1, display: 'grid', gridTemplateRows: 'auto 1fr', overflow: 'hidden', padding: '16px 24px', gap: 16 }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', overflow: 'hidden', padding: '16px 24px', gap: 12 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {jobs.map(job => {
               const st = job.state
               return (
-                <div key={job.id} style={{ background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, padding: 12, boxShadow: 'none' }}>
+                <div key={job.id} onClick={() => setSelectedJobId(job.id)} style={{ background: DS.surface, border: `1px solid ${selectedJobId === job.id ? DS.accentBorder : DS.borderMed}`, borderRadius: 8, padding: 12, boxShadow: 'none', cursor: 'pointer' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                     <div style={{ width: 36, height: 36, borderRadius: 9, background: job.bg, border: `1px solid ${job.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <job.Icon size={17} color={job.color} />
@@ -444,12 +781,7 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
                     {(st === 'idle' || st === 'stopped' || st === 'failed') && (
                       <CtrlBtn onClick={() => startJob(job.id)} icon={<HiOutlinePlay size={11} />} label="Start" color="#2563eb" bg="#eff6ff" border="#bfdbfe" />
                     )}
-                    {st === 'running' && (
-                      <>
-                        <CtrlBtn onClick={() => stopJob(job.id)} icon={<HiOutlineStop size={11} />} label="Stop" color={DS.red} bg={DS.redSoft} border={DS.redBorder} />
-                        <CtrlBtn onClick={() => {}} icon={<HiOutlinePause size={11} />} label="Pause" color="#d97706" bg="#fffbeb" border="#fde68a" />
-                      </>
-                    )}
+                    {st === 'running' && <CtrlBtn onClick={() => stopJob(job.id)} icon={<HiOutlineStop size={11} />} label="Stop" color={DS.red} bg={DS.redSoft} border={DS.redBorder} />}
                     {(st === 'completed' || st === 'failed' || st === 'stopped') && (
                       <CtrlBtn onClick={() => restartJob(job.id)} icon={<HiOutlineArrowPathRoundedSquare size={11} />} label="Restart" color="#059669" bg={DS.greenSoft} border={DS.greenBorder} />
                     )}
@@ -458,35 +790,88 @@ export default function Admin({ watchlists, onUpdateWatchlist, botConfigs, onUpd
               )
             })}
           </div>
-
-          {/* Live terminal */}
-          <div style={{ display: 'flex', flexDirection: 'column', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, overflow: 'hidden', boxShadow: 'none' }}>
-            <div style={{ padding: '10px 16px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc', flexShrink: 0 }}>
-              <div style={{ display: 'flex', gap: 5 }}>
-                {['#ef4444', '#f59e0b', '#22c55e'].map(c => <div key={c} style={{ width: 9, height: 9, borderRadius: '50%', background: c, opacity: 0.7 }} />)}
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 600, color: DS.textSub }}>LIVE TERMINAL · finbot-backend</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginLeft: 8 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', animation: 'blink 1.5s ease-in-out infinite' }} />
-                <span style={{ fontSize: 9, color: DS.green }}>auto-scroll</span>
-              </div>
-              <button onClick={() => setLogs([])} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: DS.textFaint, fontSize: 10, cursor: 'pointer' }}>Clear</button>
-            </div>
-            <div ref={logsRef} style={{ flex: 1, overflow: 'auto', padding: '10px 16px', fontFamily: 'DM Mono, monospace', fontSize: 11, lineHeight: 2 }}>
-              {logs.map((line, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '1px 6px', borderRadius: 4, background: logBg[line.type] }}>
-                  <span style={{ color: '#cbd5e1', flexShrink: 0, fontFamily: 'DM Mono, monospace' }}>[{line.t}]</span>
-                  <span style={{ color: logColor[line.type], fontFamily: 'DM Mono, monospace' }}>{line.msg}</span>
+          <div style={{ minHeight: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <span style={{ fontSize: 10, color: DS.textMuted, fontWeight: 600 }}>{jobs.find(job => job.id === selectedJobId)?.label}</span>
+              {selectedJobId !== 'fetch' && (
+                <div role="group" aria-label="Operations output view" style={{ display: 'flex', border: `1px solid ${DS.borderMed}`, borderRadius: 6, overflow: 'hidden', background: DS.surface }}>
+                  {(['terminal', 'table'] as const).map(view => (
+                    <button key={view} onClick={() => setConsoleView(view)} aria-pressed={consoleView === view}
+                      style={{ padding: '5px 11px', border: 'none', borderRight: view === 'terminal' ? `1px solid ${DS.borderMed}` : 'none', background: consoleView === view ? DS.accentSoft : DS.surface, color: consoleView === view ? DS.accent : DS.textSub, fontSize: 10, fontWeight: consoleView === view ? 700 : 500, cursor: 'pointer', textTransform: 'capitalize' }}>
+                      {view}
+                    </button>
+                  ))}
                 </div>
-              ))}
-              <div style={{ color: '#cbd5e1', fontFamily: 'DM Mono, monospace' }}>▌</div>
+              )}
+            </div>
+
+                      {selectedJobId === 'fetch' || consoleView === 'terminal' ? (
+                        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, overflow: 'hidden', boxShadow: 'none' }}>
+                          <div style={{ padding: '10px 16px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc', flexShrink: 0 }}>
+                            <div style={{ display: 'flex', gap: 5 }}>
+                              {['#ef4444', '#f59e0b', '#22c55e'].map(c => <div key={c} style={{ width: 9, height: 9, borderRadius: '50%', background: c, opacity: 0.7 }} />)}
+                            </div>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: DS.textSub }}>LIVE TERMINAL · finbot-backend</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginLeft: 8 }}>
+                              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', animation: 'blink 1.5s ease-in-out infinite' }} />
+                              <span style={{ fontSize: 9, color: DS.green }}>auto-scroll</span>
+                            </div>
+                            <button onClick={() => setLogs([])} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: DS.textFaint, fontSize: 10, cursor: 'pointer' }}>Clear</button>
+                          </div>
+                          <div ref={logsRef} style={{ flex: 1, overflow: 'auto', padding: '10px 16px', fontFamily: 'DM Mono, monospace', fontSize: 11, lineHeight: 2 }}>
+                            {logs.map((line, i) => (
+                              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '1px 6px', borderRadius: 4, background: logBg[line.type] }}>
+                                <span style={{ color: '#cbd5e1', flexShrink: 0, fontFamily: 'DM Mono, monospace' }}>[{line.t}]</span>
+                                <span style={{ color: logColor[line.type], fontFamily: 'DM Mono, monospace' }}>{line.msg}</span>
+                              </div>
+                            ))}
+                            <div style={{ color: '#cbd5e1', fontFamily: 'DM Mono, monospace' }}>▌</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8 }}>
+                          {selectedJobId === 'fetch' ? (
+                            <FetchedCompaniesTab companies={fetchedCompanies} />
+                          ) : selectedJobId === 'presentations' ? (
+                            <InvestorPresentationsTab
+                              companies={ALL_CO_LIST}
+                              collectedCompanies={collectedPresentations}
+                              activeCompany={activePresentationCompany}
+                              isCollecting={isCollectingPresentations}
+                              progress={presentationProgress}
+                              completedCount={presentationCompletedCount}
+                              totalCount={presentationTotalCount}
+                              totalProgress={presentationTotalProgress}
+                              onStart={() => startPresentationCollection()}
+                              onStop={stopPresentationCollection}
+                            />
+                          ) : (
+                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: DS.textFaint, fontSize: 11 }}>No table view is available for this operation.</div>
+                          )}
+                        </div>
+                      )}
+
             </div>
           </div>
-        </div>
       )}
 
       {/* ── Users & Data ── */}
       {activeTab === 'users' && <UsersDataTab />}
+
+      {/* ── Untracked Companies ── */}
+      {activeTab === 'untracked' && (
+        <MissingCompaniesTab
+          companies={missingCompanies}
+          activeCompany={activeFetchCompany}
+          isFetching={isFetchingCompany}
+          progress={companyFetchProgress}
+          completedCount={fetchCompletedCount}
+          totalCount={fetchTotalCount}
+          totalProgress={totalFetchProgress}
+          onStart={() => startCompanyFetch()}
+          onStop={stopCompanyFetch}
+        />
+      )}
 
       {/* ── Default Config ── */}
       {activeTab === 'defaults' && (
@@ -702,71 +1087,18 @@ function DefaultConfigTab({ botConfigs, onUpdateBotConfig }: {
 
 /* ─── Read-only view of the default config ──────────────────────── */
 function DefaultConfigReadOnly({ config }: { config: BotConfig }) {
-  const sectors = inferSectors(config.companies)
-  const styleColors: Record<string, { bg: string; color: string; border: string }> = {
-    concise:    { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
-    detailed:   { bg: DS.accentSoft, color: DS.accent, border: DS.accentBorder },
-    analytical: { bg: DS.purpleSoft, color: DS.purple, border: DS.purpleBorder },
-  }
-  const sc = styleColors[config.responseStyle] ?? styleColors.analytical
-  const companiesBySector: Record<string, string[]> = {}
-  sectors.forEach(sec => {
-    companiesBySector[sec] = (SECTOR_COMPANIES[sec] ?? []).filter(co => config.companies.includes(co))
-  })
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0 }}>
-      {/* Sectors + Response Style row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, flexShrink: 0 }}>
-        <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 8, padding: '9px 11px', boxShadow: 'none' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em', marginBottom: 7 }}>SECTORS ({sectors.length})</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {sectors.map(s => (
-              <span key={s} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 5, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, color: DS.accent, fontWeight: 600 }}>{s}</span>
-            ))}
-            {sectors.length === 0 && <span style={{ fontSize: 11, color: DS.textFaint, fontStyle: 'italic' }}>No sectors configured</span>}
-          </div>
-        </div>
-        <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 8, padding: '9px 11px', boxShadow: 'none', display: 'flex', flexDirection: 'column', gap: 5, minWidth: 120 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em' }}>RESPONSE STYLE</div>
-          <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 5, background: sc.bg, border: `1px solid ${sc.border}`, color: sc.color, textTransform: 'capitalize', textAlign: 'center' }}>
-            {config.responseStyle}
-          </span>
-        </div>
-      </div>
-
-      {/* Companies by sector */}
-      <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 8, overflow: 'hidden', boxShadow: 'none', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        <div style={{ padding: '8px 11px', borderBottom: `1px solid ${DS.border}`, background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <HiOutlineUsers size={13} color={DS.accent} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: DS.text, flex: 1 }}>Companies ({config.companies.length})</span>
-        </div>
-        <div style={{ padding: '8px 11px', display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
-          {Object.entries(companiesBySector).map(([sec, cos]) => (
-            <div key={sec}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.07em', marginBottom: 6 }}>{sec}</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                {cos.map(co => (
-                  <span key={co} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 6, background: DS.accentSoft, border: `1px solid ${DS.accentBorder}`, color: DS.accent, fontWeight: 500 }}>{co}</span>
-                ))}
-              </div>
-            </div>
-          ))}
-          {config.companies.length === 0 && <div style={{ fontSize: 12, color: DS.textFaint, fontStyle: 'italic' }}>No companies configured</div>}
-        </div>
-      </div>
-
-      {/* Metrics */}
-      <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 10, overflow: 'hidden', boxShadow: 'none', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${DS.border}`, background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+      <div style={{ background: DS.surface, border: `1px solid ${DS.border}`, borderRadius: 7, overflow: 'hidden', flexShrink: 0 }}>
+        <div style={{ padding: '7px 10px', borderBottom: `1px solid ${DS.border}`, background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6 }}>
           <HiOutlineAdjustmentsHorizontal size={13} color={DS.accent} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: DS.text }}>Metrics ({config.metrics.length})</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: DS.text }}>Metrics ({config.metrics.length})</span>
         </div>
-        <div style={{ padding: '10px 14px', display: 'flex', flexWrap: 'wrap', gap: 6, overflowY: 'auto' }}>
+        <div style={{ padding: '8px 10px', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
           {config.metrics.map(m => (
-            <span key={m} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, background: '#f1f5f9', border: `1px solid ${DS.border}`, color: DS.textSub, fontWeight: 500 }}>{m}</span>
+            <span key={m} style={{ fontSize: 9, padding: '2px 7px', borderRadius: 5, background: '#f1f5f9', border: `1px solid ${DS.border}`, color: DS.textSub, fontWeight: 500 }}>{m}</span>
           ))}
-          {config.metrics.length === 0 && <span style={{ fontSize: 12, color: DS.textFaint, fontStyle: 'italic' }}>No metrics configured</span>}
+          {config.metrics.length === 0 && <span style={{ fontSize: 10, color: DS.textFaint, fontStyle: 'italic' }}>No metrics configured</span>}
         </div>
       </div>
     </div>
@@ -785,37 +1117,17 @@ function DefaultBotConfigEditor({ config, onSave }: {
   config: BotConfig
   onSave: (patch: Partial<Omit<BotConfig, 'id' | 'createdAt'>>) => void
 }) {
-  const initSectors = inferSectors(config.companies)
-  const [sectors, setSectors] = useState<string[]>(initSectors)
-  const [sectorTab, setSectorTab] = useState<string>(initSectors[0] ?? '')
-  const [editCompanies, setEditCompanies] = useState<string[]>([...config.companies])
   const [editMetrics, setEditMetrics] = useState<string[]>([...config.metrics])
   const [metricSearch, setMetricSearch] = useState('')
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(Object.keys(ANNUAL_METRIC_GROUPS)))
-  const [responseStyle, setResponseStyle] = useState(config.responseStyle)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [saved, setSaved] = useState(false)
 
-  const toggleSector = (s: string) => {
-    setSectors(prev => {
-      const next = prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
-      const cos = Array.from(new Set(next.flatMap(sec => SECTOR_COMPANIES[sec] ?? [])))
-      setEditCompanies(cos)
-      if (!next.includes(sectorTab)) setSectorTab(next[0] ?? '')
-      return next
-    })
-  }
-
-  const toggleCompany = (co: string) => setEditCompanies(prev => prev.includes(co) ? prev.filter(c => c !== co) : [...prev, co])
   const toggleMetric = (m: string) => setEditMetrics(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m])
   const toggleGroup = (g: string) => setExpandedGroups(s => { const n = new Set(s); n.has(g) ? n.delete(g) : n.add(g); return n })
   const fmtMetrics = (list: string[]) => metricSearch ? list.filter(m => m.toLowerCase().includes(metricSearch.toLowerCase())) : list
 
-  const activeSec = sectors.includes(sectorTab) ? sectorTab : sectors[0] ?? ''
-  const secCos = SECTOR_COMPANIES[activeSec] ?? []
-  const allSectorCos = Array.from(new Set(sectors.flatMap(s => SECTOR_COMPANIES[s] ?? [])))
-
   const save = () => {
-    onSave({ sectors, companies: editCompanies, metrics: editMetrics, responseStyle })
+    onSave({ metrics: editMetrics })
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
@@ -830,7 +1142,7 @@ function DefaultBotConfigEditor({ config, onSave }: {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: DS.text }}>{config.name}</div>
           <div style={{ fontSize: 10, color: DS.textFaint }}>
-            {editCompanies.length} companies · {editMetrics.length} metrics · {responseStyle}
+            {editMetrics.length} metrics
           </div>
         </div>
         {saved && (
@@ -842,63 +1154,6 @@ function DefaultBotConfigEditor({ config, onSave }: {
 
       {/* Scrollable form body */}
       <div style={{ padding: '16px 18px 20px', overflowY: 'auto', flex: 1 }}>
-        {/* SECTORS */}
-        <SL label="SECTORS" />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
-          <span style={{ fontSize: 10, color: DS.textFaint }}>{sectors.length > 0 ? `${sectors.length} selected` : 'None selected'}</span>
-          <button onClick={() => {
-            const next = SECTORS.every(s => sectors.includes(s)) ? [] : [...SECTORS]
-            setSectors(next)
-            setEditCompanies(Array.from(new Set(next.flatMap(s => SECTOR_COMPANIES[s] ?? []))))
-            setSectorTab(next[0] ?? '')
-          }} style={{ fontSize: 9, padding: '2px 9px', borderRadius: 5, border: `1px solid ${DS.accentBorder}`, background: DS.accentSoft, color: DS.accent, cursor: 'pointer', fontWeight: 600 }}>
-            {SECTORS.every(s => sectors.includes(s)) ? 'Clear all' : 'Select all'}
-          </button>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5, marginBottom: 4 }}>
-          {SECTORS.map(s => <Chip key={s} label={s} sel={sectors.includes(s)} onClick={() => toggleSector(s)} />)}
-        </div>
-
-        {/* COMPANIES */}
-        <SL label="COMPANIES" />
-        {sectors.length === 0 ? (
-          <div style={{ fontSize: 11, color: DS.textFaint, fontStyle: 'italic', marginBottom: 10 }}>Select sectors above to see companies</div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 10, color: DS.textFaint }}>{editCompanies.length} of {allSectorCos.length} selected</span>
-              <div style={{ display: 'flex', gap: 5 }}>
-                <button onClick={() => setEditCompanies(allSectorCos)} style={{ fontSize: 9, padding: '2px 9px', borderRadius: 5, border: `1px solid ${DS.accentBorder}`, background: DS.accentSoft, color: DS.accent, cursor: 'pointer', fontWeight: 600 }}>All</button>
-                <button onClick={() => setEditCompanies([])} style={{ fontSize: 9, padding: '2px 9px', borderRadius: 5, border: `1px solid ${DS.border}`, background: '#fff', color: DS.textSub, cursor: 'pointer', fontWeight: 600 }}>None</button>
-              </div>
-            </div>
-            <div style={{ display: 'flex', overflowX: 'auto', borderBottom: `1px solid ${DS.border}`, gap: 0 }}>
-              {sectors.map(sec => {
-                const isSel = sec === activeSec
-                const cnt = (SECTOR_COMPANIES[sec] ?? []).filter(co => editCompanies.includes(co)).length
-                return (
-                  <button key={sec} onClick={() => setSectorTab(sec)}
-                    style={{ padding: '7px 11px', background: 'none', border: 'none', borderBottom: isSel ? `2px solid ${DS.accent}` : '2px solid transparent', color: isSel ? DS.accent : DS.textSub, fontSize: 10, fontWeight: isSel ? 700 : 400, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                    {sec}
-                    <span style={{ fontSize: 8, background: isSel ? DS.accentBorder : '#e2e8f0', color: isSel ? DS.accent : DS.textFaint, borderRadius: 10, padding: '0 5px', lineHeight: '14px' }}>{cnt}/{SECTOR_COMPANIES[sec]?.length ?? 0}</span>
-                  </button>
-                )
-              })}
-            </div>
-            <div style={{ border: `1px solid ${DS.border}`, borderTop: 'none', borderRadius: '0 0 8px 8px', marginBottom: 2 }}>
-              {secCos.map(co => {
-                const sel = editCompanies.includes(co)
-                return (
-                  <label key={co} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderBottom: `1px solid ${DS.border}`, cursor: 'pointer', background: sel ? DS.accentSoft : '#fff' }}>
-                    <input type="checkbox" checked={sel} onChange={() => toggleCompany(co)} style={{ accentColor: DS.accent, width: 13, height: 13, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: sel ? DS.accent : DS.text, fontWeight: sel ? 600 : 400 }}>{co}</span>
-                  </label>
-                )
-              })}
-            </div>
-          </>
-        )}
-
         {/* METRICS */}
         <SL label="METRICS" />
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
@@ -938,15 +1193,6 @@ function DefaultBotConfigEditor({ config, onSave }: {
           })}
         </div>
         {editMetrics.length > 0 && <div style={{ fontSize: 10, color: DS.accent, marginBottom: 10 }}>{editMetrics.length} metrics selected</div>}
-
-        {/* RESPONSE STYLE */}
-        <SL label="RESPONSE STYLE" />
-        <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-          {(['concise', 'detailed', 'analytical'] as const).map(st => (
-            <button key={st} onClick={() => setResponseStyle(st)}
-              style={{ flex: 1, padding: '7px', borderRadius: 8, border: `1px solid ${responseStyle === st ? DS.accentBorder : DS.border}`, background: responseStyle === st ? DS.accentSoft : 'transparent', color: responseStyle === st ? DS.accent : DS.textSub, fontSize: 11, fontWeight: responseStyle === st ? 600 : 400, cursor: 'pointer', textTransform: 'capitalize' }}>{st}</button>
-          ))}
-        </div>
 
         <button onClick={save}
           style={{ width: '100%', padding: '8px', border: `1px solid ${DS.accentBorder}`, borderRadius: 6, background: DS.accentSoft, color: DS.accent, fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>

@@ -57,6 +57,7 @@ interface ConfigForm {
 }
 
 interface Props {
+  userEmail: string
   botConfigs: BotConfig[]
   activeBotConfigId: number | null
   onSetActiveBotConfig: (id: number | null) => void
@@ -75,8 +76,8 @@ interface Props {
 /* ─── Constants ─────────────────────────────────────────────────── */
 const DEFAULT_CFG: ConfigForm = {
   name: 'FinBot Default',
-  sectors: ['Information Technology', 'Financial Services'],
-  companies: ['TCS', 'Infosys', 'HDFC Bank', 'ICICI Bank'],
+  sectors: [],
+  companies: [],
   timePeriod: 'annual',
   years: ['2023', '2024', '2025'],
   quarters: [],
@@ -100,7 +101,7 @@ const SUGGESTIONS = [
   'Cash flow analysis for HDFC Bank vs ICICI Bank',
 ]
 
-const PERSONALIZE_COACH_KEY = 'finbot_personalize_coach_seen_v3'
+const PERSONALIZATION_COMPLETE_KEY = 'finbot_personalization_complete_v1'
 
 const DS = {
   bg: '#f4f6f9',
@@ -515,7 +516,7 @@ function SL({ label }: { label: string }) {
   return <div style={{ fontSize: 9, fontWeight: 700, color: DS.textFaint, letterSpacing: '0.08em', marginBottom: 7, marginTop: 16 }}>{label}</div>
 }
 
-function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, onSaveNew, onUpdate, onDelete, onActivate, savedScreeners, onNavigateToScreener }: {
+function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, onSaveNew, onUpdate, onDelete, onActivate, onPersonalizationComplete, requireCompanies, initialEditConfigId, savedScreeners, onNavigateToScreener }: {
   form: ConfigForm; setForm: React.Dispatch<React.SetStateAction<ConfigForm>>
   botConfigs: BotConfig[]; activeBotConfigId: number | null
   onClose: () => void
@@ -523,11 +524,14 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
   onUpdate: (id: number) => void
   onDelete: (id: number) => void
   onActivate: (id: number | null) => void
+  onPersonalizationComplete: () => void
+  requireCompanies: boolean
+  initialEditConfigId: number | null
   savedScreeners: SavedScreener[]
   onNavigateToScreener: () => void
 }) {
   const [mode, setMode] = useState<CfgMode>('existing')
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(initialEditConfigId)
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
   const [expandedCardId, setExpandedCardId] = useState<number | null>(null)
   const [metricSearch, setMetricSearch] = useState('')
@@ -558,10 +562,20 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
     setMode('existing')
   }
 
+  useEffect(() => {
+    if (initialEditConfigId === null) return
+    const config = botConfigs.find(item => item.id === initialEditConfigId)
+    if (!config) return
+    setEditingId(config.id)
+    setFormCompanySearch('')
+    setForm({ name: config.name, sectors: config.sectors, companies: config.companies, timePeriod: config.timePeriod, years: config.years, quarters: config.quarters, metrics: config.metrics, responseStyle: config.responseStyle, promptInstructions: config.promptInstructions })
+  }, [initialEditConfigId])
+
   const toggleSector = (s: string) => setForm(f => {
     const sectorIn = f.sectors.includes(s)
     const newSectors = sectorIn ? f.sectors.filter(x => x !== s) : [...f.sectors, s]
-    const newCos = Array.from(new Set(newSectors.flatMap(sec => SECTOR_COMPANIES[sec] ?? [])))
+    const availableCompanies = new Set(newSectors.flatMap(sec => SECTOR_COMPANIES[sec] ?? []))
+    const newCos = f.companies.filter(company => availableCompanies.has(company))
     return { ...f, sectors: newSectors, companies: newCos }
   })
   const toggleM = (m: string) => setForm(f => ({ ...f, metrics: f.metrics.includes(m) ? f.metrics.filter(x => x !== m) : [...f.metrics, m] }))
@@ -591,12 +605,13 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
     const sectors = inferSectors(createCompanies)
     const metrics = createMetrics.length ? createMetrics : FREQUENTLY_USED_METRICS
     onSaveNew({ name: createName, sectors, companies: createCompanies, metrics, responseStyle: 'analytical' })
+    onPersonalizationComplete()
     onClose()
   }
 
   const handleCreateFromScratch = () => {
-    if (!form.name.trim()) return
-    onSaveNew(); onClose()
+    if (!form.name.trim() || form.companies.length === 0) return
+    onSaveNew(); onPersonalizationComplete(); onClose()
   }
 
   const Chip = ({ label, sel, onClick }: { label: string; sel: boolean; onClick: () => void }) => (
@@ -654,7 +669,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                   cfg.sectors.length > 0 ? `${cfg.sectors.length} sector${cfg.sectors.length > 1 ? 's' : ''}` : null,
                   `${cfg.companies.length} companies`,
                   `${cfg.metrics.length} metrics`,
-                  cfg.responseStyle,
+                  !isDefault ? cfg.responseStyle : null,
                 ].filter(Boolean).join(' · ')
                 return (
                   <div key={cfg.id} style={{ border: `1px solid ${isActive ? DS.accentBorder : DS.border}`, borderRadius: 8, padding: '7px 9px', background: isActive ? 'rgba(37,99,235,0.03)' : DS.surface, boxShadow: isActive ? '0 2px 8px rgba(37,99,235,0.04)' : 'none' }}>
@@ -677,7 +692,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                           { label: 'SECTORS', value: cfg.sectors.join(', ') || '—' },
                           { label: 'COMPANIES', value: cfg.companies.slice(0, 6).join(', ') + (cfg.companies.length > 6 ? ` +${cfg.companies.length - 6}` : '') || '—' },
                           { label: 'METRICS', value: cfg.metrics.slice(0, 6).join(' · ') + (cfg.metrics.length > 6 ? ` +${cfg.metrics.length - 6}` : '') || '—' },
-                          { label: 'STYLE', value: cfg.responseStyle },
+                          ...(!isDefault ? [{ label: 'STYLE', value: cfg.responseStyle }] : []),
                           ...(cfg.promptInstructions ? [{ label: 'NOTES', value: cfg.promptInstructions }] : []),
                         ].map(row => (
                           <div key={row.label} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
@@ -695,7 +710,7 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
                     ) : (
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => startEdit(cfg)} style={{ flex: 1, padding: '4px 9px', minHeight: 24, borderRadius: 6, border: `1px solid ${DS.accentBorder}`, background: 'transparent', color: DS.accent, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>Edit</button>
-                        {!isActive && <button onClick={() => onActivate(cfg.id)} style={{ flex: 1, padding: '4px 9px', minHeight: 24, borderRadius: 6, border: 'none', background: DS.accent, color: '#fff', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>Activate</button>}
+                        {!isActive && <button onClick={() => { onActivate(cfg.id); if (cfg.companies.length > 0) { onPersonalizationComplete(); onClose() } }} style={{ flex: 1, padding: '4px 9px', minHeight: 24, borderRadius: 6, border: 'none', background: DS.accent, color: '#fff', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>Activate</button>}
                         {isActive && <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: DS.green, background: DS.greenSoft, border: `1px solid ${DS.greenBorder}`, borderRadius: 6, padding: '4px 9px', minHeight: 24 }}><HiOutlineCheck size={11} /> Active</div>}
                         {!isDefault && <button onClick={() => setDeleteConfirmId(cfg.id)} style={{ width: 28, height: 24, borderRadius: 6, border: `1px solid ${DS.border}`, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: DS.textFaint }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor = DS.redBorder; e.currentTarget.style.background = DS.redSoft; e.currentTarget.style.color = DS.red }}
@@ -821,14 +836,17 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
               </div>
               {form.metrics.length > 0 && <div style={{ marginTop: 5, fontSize: 10, color: DS.accent }}>{form.metrics.length} selected</div>}
 
-              {/* RESPONSE STYLE */}
-              <SL label="RESPONSE STYLE" />
-              <div style={{ display: 'flex', gap: 6, marginBottom: 2 }}>
-                {(['concise', 'detailed', 'analytical'] as const).map(st => (
-                  <button key={st} onClick={() => setForm(f => ({ ...f, responseStyle: st }))}
-                    style={{ flex: 1, padding: '6px', borderRadius: 8, border: `1px solid ${form.responseStyle === st ? DS.accentBorder : DS.border}`, background: form.responseStyle === st ? DS.accentSoft : 'transparent', color: form.responseStyle === st ? DS.accent : DS.textSub, fontSize: 11, fontWeight: form.responseStyle === st ? 600 : 400, cursor: 'pointer', textTransform: 'capitalize' }}>{st}</button>
-                ))}
-              </div>
+              {editingId !== DEFAULT_BOT_CONFIG_ID && (
+                <>
+                  <SL label="RESPONSE STYLE" />
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 2 }}>
+                    {(['concise', 'detailed', 'analytical'] as const).map(st => (
+                      <button key={st} onClick={() => setForm(f => ({ ...f, responseStyle: st }))}
+                        style={{ flex: 1, padding: '6px', borderRadius: 8, border: `1px solid ${form.responseStyle === st ? DS.accentBorder : DS.border}`, background: form.responseStyle === st ? DS.accentSoft : 'transparent', color: form.responseStyle === st ? DS.accent : DS.textSub, fontSize: 11, fontWeight: form.responseStyle === st ? 600 : 400, cursor: 'pointer', textTransform: 'capitalize' }}>{st}</button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -1109,8 +1127,8 @@ function ConfigModal({ form, setForm, botConfigs, activeBotConfigId, onClose, on
         <div style={{ padding: '9px 18px', borderTop: `1px solid ${DS.border}`, display: 'flex', gap: 7, flexShrink: 0 }}>
           <button onClick={onClose} style={{ padding: '5px 10px', minHeight: 26, border: `1px solid ${DS.borderMed}`, borderRadius: 6, background: DS.surface, color: DS.textSub, fontSize: 11, cursor: 'pointer' }}>Cancel</button>
           {mode === 'existing' && showForm && editingId !== null && (
-            <button onClick={() => { onUpdate(editingId); setEditingId(null) }}
-              style={{ flex: 1, padding: '5px 10px', minHeight: 26, border: 'none', borderRadius: 6, background: DS.accent, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 12px rgba(37,99,235,0.25)' }}>
+            <button onClick={() => { onUpdate(editingId); setEditingId(null); if (form.companies.length > 0) onPersonalizationComplete() }} disabled={requireCompanies && form.companies.length === 0}
+              style={{ flex: 1, padding: '5px 10px', minHeight: 26, border: 'none', borderRadius: 6, background: requireCompanies && form.companies.length === 0 ? '#e2e8f0' : DS.accent, color: requireCompanies && form.companies.length === 0 ? '#94a3b8' : '#fff', fontSize: 11, fontWeight: 700, cursor: requireCompanies && form.companies.length === 0 ? 'not-allowed' : 'pointer', boxShadow: '0 3px 12px rgba(37,99,235,0.25)' }}>
               Save Changes
             </button>
           )}
@@ -1388,12 +1406,14 @@ function RefTable({ rich, onClose, tableOnly = false }: { rich: RichContent; onC
 
 /* ─── Main ──────────────────────────────────────────────────────── */
 export default function AIChat({
-  botConfigs, activeBotConfigId, onSetActiveBotConfig,
+  userEmail, botConfigs, activeBotConfigId, onSetActiveBotConfig,
   onAddBotConfig, onUpdateBotConfig, onDeleteBotConfig,
   chatSessions, activeChatId, onUpdateChat, onPersonalizeRef,
   savedScreeners, onNavigateToScreener, onMessageSent,
 }: Props) {
   const ts = () => new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+  const personalizationKey = `${PERSONALIZATION_COMPLETE_KEY}_${encodeURIComponent(userEmail.toLowerCase())}`
+  const [personalizationComplete, setPersonalizationComplete] = useState(() => sessionStorage.getItem(personalizationKey) === '1')
 
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -1401,18 +1421,20 @@ export default function AIChat({
   const [copied, setCopied] = useState<number | null>(null)
   const [showConfig, setShowConfig] = useState(false)
   const [showRef, setShowRef] = useState<number | null>(null)
-  const [showCoach, setShowCoach] = useState(() => !sessionStorage.getItem(PERSONALIZE_COACH_KEY))
+  const [showCoach, setShowCoach] = useState(() => sessionStorage.getItem(personalizationKey) !== '1')
   const bottomRef = useRef<HTMLDivElement>(null)
   const referenceMessageRef = useRef<HTMLDivElement>(null)
 
   // Register opener so sidebar's personalize button can trigger it
-  useEffect(() => { onPersonalizeRef?.(() => setShowConfig(true)) }, [onPersonalizeRef])
-
   const activeCfg = botConfigs.find(c => c.id === activeBotConfigId)
   const effectiveCfg: ConfigForm = useMemo(() => {
     if (activeCfg) return { name: activeCfg.name, sectors: activeCfg.sectors, companies: activeCfg.companies, timePeriod: activeCfg.timePeriod, years: activeCfg.years, quarters: activeCfg.quarters, metrics: activeCfg.metrics, responseStyle: activeCfg.responseStyle, promptInstructions: activeCfg.promptInstructions }
     return { ...DEFAULT_CFG }
   }, [activeCfg])
+
+  useEffect(() => {
+    onPersonalizeRef?.(() => { setConfigForm({ ...effectiveCfg }); setShowConfig(true) })
+  }, [effectiveCfg, onPersonalizeRef])
 
   const [configForm, setConfigForm] = useState<ConfigForm>({ ...DEFAULT_CFG })
 
@@ -1427,6 +1449,7 @@ export default function AIChat({
   }, [showRef])
 
   const send = (text?: string) => {
+    if (!personalizationComplete) return
     const msg = (text ?? input).trim()
     if (!msg || loading) return
     const now = ts()
@@ -1457,11 +1480,30 @@ export default function AIChat({
   const updateConfig = (id: number) => {
     const cos = configForm.companies.length ? configForm.companies : configForm.sectors.flatMap(s => SECTOR_COMPANIES[s] ?? [])
     const mets = configForm.metrics.length ? configForm.metrics : FREQUENTLY_USED_METRICS
-    onUpdateBotConfig(id, { name: configForm.name, sectors: configForm.sectors, companies: cos, timePeriod: configForm.timePeriod, years: configForm.years, quarters: configForm.quarters, metrics: mets, responseStyle: configForm.responseStyle, promptInstructions: configForm.promptInstructions })
+    onUpdateBotConfig(id, {
+      name: configForm.name,
+      sectors: configForm.sectors,
+      companies: cos,
+      timePeriod: configForm.timePeriod,
+      years: configForm.years,
+      quarters: configForm.quarters,
+      metrics: mets,
+      ...(id === DEFAULT_BOT_CONFIG_ID ? {} : { responseStyle: configForm.responseStyle }),
+      promptInstructions: configForm.promptInstructions,
+    })
+  }
+
+  const completePersonalization = () => {
+    sessionStorage.setItem(personalizationKey, '1')
+    setPersonalizationComplete(true)
+    setShowCoach(false)
+    setShowConfig(false)
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: DS.bg, fontFamily: 'Inter, sans-serif' }}>
+
+      {!personalizationComplete && !showConfig && <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 150, background: 'rgba(15,23,42,0.28)', backdropFilter: 'blur(5px)' }} />}
 
       {/* Header */}
       <div style={{ background: DS.surface, borderBottom: `1px solid ${DS.border}`, flexShrink: 0 }}>
@@ -1481,7 +1523,7 @@ export default function AIChat({
             </span>
           </div>
 
-          <div style={{ marginLeft: 'auto', position: 'relative' }}>
+          <div style={{ marginLeft: 'auto', position: 'relative', zIndex: showCoach ? 151 : 'auto' }}>
             <button onClick={() => { setConfigForm({ ...effectiveCfg }); setShowConfig(true) }}
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', minHeight: 26, background: showCoach ? DS.accentSoft : DS.surface, border: `1px solid ${showCoach ? DS.accent : DS.borderMed}`, borderRadius: 6, cursor: 'pointer', fontSize: 11, fontWeight: 600, color: showCoach ? DS.accent : DS.textSub, transition: 'all 0.15s', boxShadow: showCoach ? `0 0 0 3px rgba(37,99,235,0.12)` : 'none' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = DS.accentBorder; e.currentTarget.style.color = DS.accent; e.currentTarget.style.background = DS.accentSoft }}
@@ -1501,13 +1543,28 @@ export default function AIChat({
                   </div>
                   <div style={{ flex: 1, minWidth: 0, display: 'block' }}>
                     <div style={{ display: 'block', fontSize: 11, fontWeight: 700, marginBottom: 3, color: DS.text, whiteSpace: 'normal' }}>Personalize your data</div>
-                    <div style={{ display: 'block', width: '100%', fontSize: 10, color: DS.textSub, lineHeight: 1.45, whiteSpace: 'normal', overflowWrap: 'break-word' }}>Choose sectors, companies, and metrics to focus on, or explore with the default config.</div>
+                    <div style={{ display: 'block', width: '100%', fontSize: 10, color: DS.textSub, lineHeight: 1.45, whiteSpace: 'normal', overflowWrap: 'break-word' }}>Choose at least one company and save a personalization to start chatting.</div>
                   </div>
                 </div>
-                <button onClick={() => { sessionStorage.setItem(PERSONALIZE_COACH_KEY, '1'); setShowCoach(false) }}
+                <button onClick={() => {
+                  const defaultConfig = botConfigs.find(config => config.id === DEFAULT_BOT_CONFIG_ID)
+                  setShowCoach(false)
+                  setConfigForm(defaultConfig ? {
+                    name: defaultConfig.name,
+                    sectors: [],
+                    companies: [],
+                    timePeriod: defaultConfig.timePeriod,
+                    years: defaultConfig.years,
+                    quarters: defaultConfig.quarters,
+                    metrics: defaultConfig.metrics,
+                    responseStyle: defaultConfig.responseStyle,
+                    promptInstructions: defaultConfig.promptInstructions,
+                  } : { ...effectiveCfg, sectors: [], companies: [] })
+                  setShowConfig(true)
+                }}
                   style={{ width: '100%', padding: '6px 8px', background: DS.accent, border: `1px solid ${DS.accent}`, borderRadius: 6, color: '#fff', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}
                 >
-                  Got it
+                  OK
                 </button>
               </div>
             )}
@@ -1516,7 +1573,7 @@ export default function AIChat({
       </div>
 
       {/* Messages */}
-      <div style={{ flex: 1, overflow: 'auto', padding: msgs.length === 0 ? '12px 16px 8px' : '10px 16px', position: 'relative', background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37,99,235,0.07), transparent 55%)' }}>
+      <div inert={!personalizationComplete} style={{ flex: 1, overflow: 'auto', padding: msgs.length === 0 ? '12px 16px 8px' : '10px 16px', position: 'relative', background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37,99,235,0.07), transparent 55%)' }}>
         {msgs.length === 0 && (
           <div style={{ maxWidth: 760, margin: '2vh auto 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ width: 48, height: 48, borderRadius: 12, overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(37,99,235,0.12)', marginBottom: 10 }}>
@@ -1647,7 +1704,7 @@ export default function AIChat({
       </div>
 
       {/* Composer */}
-      <div style={{ padding: '6px 16px 8px', flexShrink: 0, background: 'linear-gradient(180deg, rgba(244,246,249,0) 0%, #f4f6f9 28%)' }}>
+      <div inert={!personalizationComplete} style={{ padding: '6px 16px 8px', flexShrink: 0, background: 'linear-gradient(180deg, rgba(244,246,249,0) 0%, #f4f6f9 28%)' }}>
         <div style={{ width: '100%', maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'flex-end', gap: 6, background: DS.surface, border: `1px solid ${DS.borderMed}`, borderRadius: 8, padding: '5px 7px 5px 9px', transition: 'all 0.2s', boxShadow: '0 5px 16px rgba(15,23,42,0.05)' }}
           onFocusCapture={e => { e.currentTarget.style.borderColor = DS.borderMed; e.currentTarget.style.boxShadow = '0 8px 24px rgba(15,23,42,0.06)' }}
           onBlurCapture={e => { e.currentTarget.style.borderColor = DS.borderMed; e.currentTarget.style.boxShadow = '0 8px 24px rgba(15,23,42,0.06)' }}
@@ -1670,9 +1727,12 @@ export default function AIChat({
         <ConfigModal
           form={configForm} setForm={setConfigForm}
           botConfigs={botConfigs} activeBotConfigId={activeBotConfigId}
-          onClose={() => setShowConfig(false)}
+          onClose={() => { setShowConfig(false); if (sessionStorage.getItem(personalizationKey) !== '1') setShowCoach(true) }}
           onSaveNew={saveConfig}
           onUpdate={updateConfig}
+          onPersonalizationComplete={completePersonalization}
+          requireCompanies={!personalizationComplete}
+          initialEditConfigId={!personalizationComplete ? DEFAULT_BOT_CONFIG_ID : null}
           onDelete={id => { onDeleteBotConfig(id); if (activeBotConfigId === id) onSetActiveBotConfig(null) }}
           onActivate={id => { onSetActiveBotConfig(id); if (id === null) setConfigForm({ ...DEFAULT_CFG }) }}
           savedScreeners={savedScreeners}
